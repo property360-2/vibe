@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+
+{% block page_actions %}
+<button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createPlanModal">
+    <span class="material-icons me-1" style="font-size: 1rem;">add</span>
+    Add Plan
+</button>
+{% endblock %}
+
+{% block content %}
+<div class="card animate-in">
+    <div class="card-header">
+        <div class="d-flex align-items-center">
+            <span class="material-icons me-2 text-muted">card_membership</span>
+            <span>Membership Plans</span>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Plan Name</th>
+                        <th>Duration</th>
+                        <th>Price</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for plan in plans %}
+                    <tr>
+                        <td>
+                            <span class="fw-medium text-primary">{{ plan.name }}</span>
+                        </td>
+                        <td>{{ plan.duration_days }} days</td>
+                        <td class="fw-bold">₱{{ plan.price }}</td>
+                        <td>
+                            {% if plan.is_active %}
+                                {% include 'atoms/badge.html' with type="active" text="Active" %}
+                            {% else %}
+                                {% include 'atoms/badge.html' with type="expired" text="Inactive" %}
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'plan_edit' plan.pk %}" class="btn btn-outline-light" title="Edit">
+                                    <span class="material-icons" style="font-size: 1rem;">edit</span>
+                                </a>
+                                <a href="{% url 'plan_delete' plan.pk %}" class="btn btn-danger" title="Delete">
+                                    <span class="material-icons" style="font-size: 1rem;">delete</span>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="empty-state">
+                            <span class="material-icons">card_membership</span>
+                            <p class="mb-2">No plans created yet</p>
+                            <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#createPlanModal">
+                                Create First Plan
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Create Plan Modal -->
+<div class="modal fade" id="createPlanModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create New Plan</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                {% include 'organisms/plan_form.html' with form=form %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

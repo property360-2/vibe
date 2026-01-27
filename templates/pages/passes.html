@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Sell Pass Form -->
+    <div class="col-lg-4">
+        <div class="card animate-in">
+            <div class="card-header">
+                <div class="d-flex align-items-center">
+                    <span class="material-icons me-2 text-muted">sell</span>
+                    <span>Sell New Pass</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <form method="POST" id="sellPassForm" class="ajax-form">
+                    {% csrf_token %}
+                    <div id="sellPassErrors" class="alert alert-danger mb-3 d-none"></div>
+                    
+                    {% include 'atoms/select.html' with field=form.member label="Select Member" searchable=True %}
+                    {% include 'atoms/select.html' with field=form.membership_plan label="Select Plan" %}
+                    
+                    <div class="d-grid mt-4">
+                        {% include 'atoms/button.html' with text="Sell Pass" type="success" icon="sell" name="sell" %}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Passes Lists -->
+    <div class="col-lg-8">
+        <!-- Active Passes -->
+        <div class="card mb-4 animate-in animate-delay-1">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    <span class="material-icons me-2 text-success" style="font-size: 1.125rem;">check_circle</span>
+                    <span>Active Passes</span>
+                </div>
+                <span class="badge bg-success bg-opacity-10 text-success" style="border: 1px solid rgba(34, 197, 94, 0.2);" id="activePassCount">{{ active_passes.count }}</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="activePassesTable">
+                        <thead>
+                            <tr>
+                                <th>Member</th>
+                                <th>Plan</th>
+                                <th>Start</th>
+                                <th>End</th>
+                                <th>Price</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pass in active_passes %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'member_detail' pass.member.pk %}" class="fw-medium text-primary">
+                                        {{ pass.member.name }}
+                                    </a>
+                                </td>
+                                <td>{{ pass.membership_plan.name }}</td>
+                                <td>{{ pass.start_date|date:"M d" }}</td>
+                                <td>{{ pass.end_date|date:"M d" }}</td>
+                                <td class="fw-bold">₱{{ pass.price_snapshot }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr id="emptyActivePasses">
+                                <td colspan="5" class="empty-state py-4">No active passes</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        
+        <!-- Expired Passes -->
+        <div class="card animate-in animate-delay-2">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    <span class="material-icons me-2 text-muted" style="font-size: 1.125rem;">cancel</span>
+                    <span>Recent Expired</span>
+                </div>
+                <span class="badge bg-secondary bg-opacity-10 text-muted" style="border: 1px solid var(--border-color);">{{ expired_passes.count }}</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Member</th>
+                                <th>Plan</th>
+                                <th>End Date</th>
+                                <th>Price</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pass in expired_passes %}
+                            <tr>
+                                <td class="text-muted">{{ pass.member.name }}</td>
+                                <td class="text-muted">{{ pass.membership_plan.name }}</td>
+                                <td class="text-muted">{{ pass.end_date|date:"M d, Y" }}</td>
+                                <td class="text-muted">₱{{ pass.price_snapshot }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="empty-state py-4">No expired passes</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('sellPassForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const form = this;
+    const memberId = form.querySelector('[name="member"]').value;
+    const planId = form.querySelector('[name="membership_plan"]').value;
+    const errorsEl = document.getElementById('sellPassErrors');
+    
+    try {
+        const result = await apiCall(window.location.href, 'POST', { 
+            member: memberId,
+            membership_plan: planId
+        });
+        
+        if (result.status === 'success') {
+            showNotification('Success', result.message, 'success');
+            errorsEl.classList.add('d-none');
+            
+            // Update UI
+            const table = document.getElementById('activePassesTable').getElementsByTagName('tbody')[0];
+            const emptyState = document.getElementById('emptyActivePasses');
+            if (emptyState) emptyState.remove();
+            
+            const newRow = table.insertRow(0);
+            newRow.classList.add('animate-in');
+            newRow.innerHTML = `
+                <td>
+                    <a href="/members/${result.data.member_pk}/" class="fw-medium text-primary">
+                        ${result.data.member_name}
+                    </a>
+                </td>
+                <td>${result.data.plan_name}</td>
+                <td>${result.data.start_date}</td>
+                <td>${result.data.end_date}</td>
+                <td class="fw-bold">₱${result.data.price}</td>
+            `;
+            
+            const countEl = document.getElementById('activePassCount');
+            const currentCount = parseInt(countEl.innerText);
+            countEl.innerText = currentCount + 1;
+            
+            // Reset form
+            if (form.querySelector('[name="member"]').tomselect) {
+                form.querySelector('[name="member"]').tomselect.clear();
+            }
+        }
+    } catch (error) {
+        errorsEl.innerText = error.message;
+        errorsEl.classList.remove('d-none');
+    }
+});
+</script>
+{% endblock %}
+

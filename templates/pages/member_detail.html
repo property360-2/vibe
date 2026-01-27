@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+
+{% block page_actions %}
+<a href="{% url 'member_edit' member.pk %}" class="btn btn-outline-light me-2">
+    <span class="material-icons me-1" style="font-size: 1rem;">edit</span>
+    Edit
+</a>
+<a href="{% url 'passes_list' %}" class="btn btn-success">
+    <span class="material-icons me-1" style="font-size: 1rem;">sell</span>
+    Sell Pass
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Member Info & Churn Prediction -->
+    <div class="col-lg-4">
+        <div class="card mb-4 animate-in">
+            <div class="card-body text-center">
+                <div class="avatar mx-auto mb-3" style="width: 64px; height: 64px; font-size: 1.5rem;">
+                    {{ member.name|slice:":1"|upper }}
+                </div>
+                <h5 class="mb-1">{{ member.name }}</h5>
+                <p class="text-muted small mb-3">{{ member.phone|default:"No phone number" }}</p>
+                
+                {% if member.has_active_pass %}
+                    {% include 'atoms/badge.html' with type="active" text="Active Pass" %}
+                {% else %}
+                    {% include 'atoms/badge.html' with type="expired" text="No Active Pass" %}
+                {% endif %}
+                
+                <hr class="my-3" style="border-color: var(--border-color);">
+                
+                <p class="text-muted small mb-1">Member since</p>
+                <p class="mb-0">{{ member.created_at|date:"F d, Y" }}</p>
+            </div>
+        </div>
+        
+        <!-- Churn Prediction Card -->
+        <div class="card animate-in animate-delay-2">
+            <div class="card-header">Churn Prediction</div>
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <h2 class="mb-1">{{ insights.return_probability|floatformat:0 }}%</h2>
+                    <p class="text-muted small mb-2">Return Probability</p>
+                    
+                    {% if insights.risk_level == 'High' %}
+                        {% include 'atoms/badge.html' with type="risk-high" text="High Risk" %}
+                    {% elif insights.risk_level == 'Medium' %}
+                        {% include 'atoms/badge.html' with type="risk-medium" text="Medium Risk" %}
+                    {% else %}
+                        {% include 'atoms/badge.html' with type="risk-low" text="Low Risk" %}
+                    {% endif %}
+                </div>
+                
+                <div class="row text-center g-2">
+                    <div class="col-4">
+                        <h5 class="mb-0">{{ insights.days_left }}</h5>
+                        <small class="text-muted">Days Left</small>
+                    </div>
+                    <div class="col-4">
+                        <h5 class="mb-0">{{ insights.attendance_7 }}</h5>
+                        <small class="text-muted">7-Day</small>
+                    </div>
+                    <div class="col-4">
+                        <h5 class="mb-0">{{ insights.attendance_3 }}</h5>
+                        <small class="text-muted">3-Day</small>
+                    </div>
+                </div>
+                
+                <hr class="my-3" style="border-color: var(--border-color);">
+                
+                <div class="p-3 rounded" style="background: var(--bg-secondary); border: 1px solid var(--border-color);">
+                    <small class="text-muted text-uppercase d-block mb-2" style="font-size: 0.6875rem;">AI Recommendation</small>
+                    <p class="mb-0 small">{{ insights.recommendation }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Pass & Attendance History -->
+    <div class="col-lg-8">
+        <!-- Pass History -->
+        <div class="card mb-4 animate-in animate-delay-1">
+            <div class="card-header">Pass History</div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Plan</th>
+                                <th>Start</th>
+                                <th>End</th>
+                                <th>Price</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pass in passes %}
+                            <tr>
+                                <td>{{ pass.membership_plan.name }}</td>
+                                <td>{{ pass.start_date|date:"M d, Y" }}</td>
+                                <td>{{ pass.end_date|date:"M d, Y" }}</td>
+                                <td>₱{{ pass.price_snapshot }}</td>
+                                <td>
+                                    {% if pass.status == 'active' %}
+                                        {% include 'atoms/badge.html' with type="active" text="Active" %}
+                                    {% else %}
+                                        {% include 'atoms/badge.html' with type="expired" text="Expired" %}
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="empty-state py-4">No passes purchased yet</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Attendance History -->
+        <div class="card animate-in animate-delay-2">
+            <div class="card-header">Recent Attendance</div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th>Pass Used</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for attendance in attendances %}
+                            <tr>
+                                <td>{{ attendance.checked_in_at|date:"M d, Y" }}</td>
+                                <td>{{ attendance.checked_in_at|time:"g:i A" }}</td>
+                                <td>{{ attendance.membership_pass.membership_plan.name }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3" class="empty-state py-4">No attendance records yet</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

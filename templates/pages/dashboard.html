@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<!-- Stats Grid -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        {% include 'molecules/stat_card.html' with value=today_checkins label="Today's Check-ins" icon="login" delay="1" %}
+    </div>
+    <div class="col-6 col-lg-3">
+        {% include 'molecules/stat_card.html' with value=active_passes label="Active Passes" icon="card_membership" delay="2" %}
+    </div>
+    <div class="col-6 col-lg-3">
+        {% include 'molecules/stat_card.html' with value=expired_passes label="Expired Passes" icon="event_busy" delay="3" %}
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card stat-card animate-in animate-delay-4">
+            <div class="card-body">
+                <span class="stat-icon material-icons">payments</span>
+                <p class="stat-value">₱{{ revenue_today }}</p>
+                <p class="stat-label">Revenue Today</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Second Row -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card h-100 animate-in animate-delay-1">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <span class="material-icons me-2 text-muted">schedule</span>
+                    <small class="text-muted text-uppercase" style="font-size: 0.6875rem; letter-spacing: 0.5px;">Peak Time</small>
+                </div>
+                <h4 class="mb-1">{{ peak_time }}</h4>
+                <p class="text-muted small mb-0">
+                    {% if peak_count %}{{ peak_count }} check-ins{% else %}No data{% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card h-100 animate-in animate-delay-2">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <span class="material-icons me-2 text-muted">upcoming</span>
+                    <small class="text-muted text-uppercase" style="font-size: 0.6875rem; letter-spacing: 0.5px;">Expected Returns</small>
+                </div>
+                <h4 class="mb-1">{{ expected_returns }}</h4>
+                <p class="text-muted small mb-0">Next 3 days</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card h-100 animate-in animate-delay-3">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <span class="material-icons me-2 text-muted">warning</span>
+                    <small class="text-muted text-uppercase" style="font-size: 0.6875rem; letter-spacing: 0.5px;">High Churn Risk</small>
+                </div>
+                <h4 class="mb-1">{{ high_churn_count }}</h4>
+                <p class="text-muted small mb-0">Member{{ high_churn_count|pluralize }} at risk</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- AI Insights -->
+<div class="row mb-4">
+    <div class="col-12">
+        {% include 'organisms/ai_insights_box.html' with ai_insights=ai_insights %}
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="card animate-in animate-delay-1">
+            <div class="card-header">Quick Actions</div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'passes_list' %}" class="btn btn-success">
+                        <span class="material-icons me-2" style="font-size: 1rem;">sell</span>
+                        Sell New Pass
+                    </a>
+                    <a href="{% url 'attendance_list' %}" class="btn btn-primary">
+                        <span class="material-icons me-2" style="font-size: 1rem;">how_to_reg</span>
+                        Check In Member
+                    </a>
+                    <a href="{% url 'members_list' %}" class="btn btn-outline-light">
+                        <span class="material-icons me-2" style="font-size: 1rem;">person_add</span>
+                        Add New Member
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card animate-in animate-delay-2">
+            <div class="card-header">Navigation</div>
+            <div class="card-body p-0">
+                <a href="{% url 'plans_list' %}" class="d-flex justify-content-between align-items-center p-3 border-bottom" style="border-color: var(--border-color) !important;">
+                    <span><span class="material-icons me-2 text-muted" style="font-size: 1rem; vertical-align: middle;">card_membership</span>Manage Plans</span>
+                    <span class="material-icons text-muted">chevron_right</span>
+                </a>
+                <a href="{% url 'reports' %}" class="d-flex justify-content-between align-items-center p-3">
+                    <span><span class="material-icons me-2 text-muted" style="font-size: 1rem; vertical-align: middle;">analytics</span>View Reports</span>
+                    <span class="material-icons text-muted">chevron_right</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

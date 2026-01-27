@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Edit Member: {{ member.name }}</h5>
+    </div>
+    <div class="card-body">
+        {% include 'organisms/member_form.html' with form=form member=member %}
+    </div>
+</div>
+{% endblock %}

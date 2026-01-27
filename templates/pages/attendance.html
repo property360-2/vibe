@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Check-in Form -->
+    <div class="col-lg-4">
+        <div class="card animate-in">
+            <div class="card-header">
+                <div class="d-flex align-items-center">
+                    <span class="material-icons me-2 text-muted">how_to_reg</span>
+                    <span>Quick Check-in</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <form method="POST" id="attendanceForm" class="ajax-form">
+                    {% csrf_token %}
+                    
+                    <div id="attendanceFormErrors" class="alert alert-danger mb-3 d-none"></div>
+                    
+                    {% include 'atoms/select.html' with field=form.member label="Select Member" searchable=True %}
+                    
+                    <div class="alert alert-info py-2 px-3 mb-4">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="material-icons" style="font-size: 1rem;">info</span>
+                            <small>Only members with active passes can check in.</small>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        {% include 'atoms/button.html' with text="Check In" type="success" icon="login" name="checkin" id="checkinBtn" %}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Today's Attendance -->
+    <div class="col-lg-8">
+        <div class="card animate-in animate-delay-1">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    <span class="material-icons me-2 text-muted">today</span>
+                    <span>Today's Attendance</span>
+                    <small class="text-muted ms-2">{{ today|date:"M d, Y" }}</small>
+                </div>
+                <span class="badge bg-secondary bg-opacity-10 text-muted" style="border: 1px solid var(--border-color);" id="attendanceCount">{{ attendances.count }} check-ins</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="attendanceTable">
+                        <thead>
+                            <tr>
+                                <th>Member</th>
+                                <th>Pass</th>
+                                <th class="text-end">Check-in Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for attendance in attendances %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'member_detail' attendance.member.pk %}" class="fw-medium text-primary">
+                                        {{ attendance.member.name }}
+                                    </a>
+                                </td>
+                                <td>{{ attendance.membership_pass.membership_plan.name }}</td>
+                                <td class="text-end">
+                                    <span class="text-success">{{ attendance.checked_in_at|time:"h:i A" }}</span>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr id="emptyAttendance">
+                                <td colspan="3" class="empty-state py-5">
+                                    <span class="material-icons">event_busy</span>
+                                    <p class="mb-0">No check-ins today</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('attendanceForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const form = this;
+    const memberId = form.querySelector('[name="member"]').value;
+    const errorsEl = document.getElementById('attendanceFormErrors');
+    
+    try {
+        const result = await apiCall(window.location.href, 'POST', { member: memberId });
+        
+        if (result.status === 'success') {
+            showNotification('Success', result.message, 'success');
+            errorsEl.classList.add('d-none');
+            
+            // Update UI
+            const table = document.getElementById('attendanceTable').getElementsByTagName('tbody')[0];
+            const emptyState = document.getElementById('emptyAttendance');
+            if (emptyState) emptyState.remove();
+            
+            const newRow = table.insertRow(0);
+            newRow.classList.add('animate-in');
+            newRow.innerHTML = `
+                <td>
+                    <a href="/members/${result.data.member_pk}/" class="fw-medium text-primary">
+                        ${result.data.member_name}
+                    </a>
+                </td>
+                <td>${result.data.plan_name}</td>
+                <td class="text-end">
+                    <span class="text-success">${result.data.checkin_time}</span>
+                </td>
+            `;
+            
+            const countEl = document.getElementById('attendanceCount');
+            const currentCount = parseInt(countEl.innerText);
+            countEl.innerText = `${currentCount + 1} check-ins`;
+            
+            // Reset form
+            if (form.querySelector('[name="member"]').tomselect) {
+                form.querySelector('[name="member"]').tomselect.clear();
+            }
+        }
+    } catch (error) {
+        errorsEl.innerText = error.message;
+        errorsEl.classList.remove('d-none');
+    }
+});
+</script>
+{% endblock %}
+

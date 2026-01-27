@@ -1,0 +1,277 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<!-- Summary Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="card stat-card animate-in animate-delay-1">
+            <div class="card-body">
+                <span class="stat-icon material-icons">payments</span>
+                <p class="stat-value">₱{{ total_revenue }}</p>
+                <p class="stat-label">Total Revenue</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card stat-card animate-in animate-delay-2">
+            <div class="card-body">
+                <span class="stat-icon material-icons">star</span>
+                <p class="stat-value" style="font-size: 1.25rem;">{{ popular_plan }}</p>
+                <p class="stat-label">Most Popular Plan</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card stat-card animate-in animate-delay-3">
+            <div class="card-body">
+                <span class="stat-icon material-icons text-success">thumb_up</span>
+                <p class="stat-value">{{ churn_distribution.Low }}</p>
+                <p class="stat-label">Low Risk Members</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card stat-card animate-in animate-delay-4">
+            <div class="card-body">
+                <span class="stat-icon material-icons text-danger">warning</span>
+                <p class="stat-value">{{ churn_distribution.High }}</p>
+                <p class="stat-label">High Risk Members</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row g-3 mb-4">
+    <!-- Sales by Plan -->
+    <div class="col-lg-6">
+        <div class="card h-100 animate-in animate-delay-1">
+            <div class="card-header">Sales Count by Plan</div>
+            <div class="card-body">
+                <canvas id="salesChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Revenue by Plan -->
+    <div class="col-lg-6">
+        <div class="card h-100 animate-in animate-delay-2">
+            <div class="card-header">Revenue by Plan</div>
+            <div class="card-body">
+                <canvas id="revenueChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hourly Distribution -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-8">
+        <div class="card h-100 animate-in animate-delay-1">
+            <div class="card-header">Check-ins by Hour</div>
+            <div class="card-body">
+                <canvas id="hourlyChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Churn Distribution -->
+    <div class="col-lg-4">
+        <div class="card h-100 animate-in animate-delay-2">
+            <div class="card-header">Churn Risk Distribution</div>
+            <div class="card-body">
+                <canvas id="churnChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Data Tables -->
+<div class="row g-3">
+    <div class="col-lg-6">
+        <div class="card animate-in">
+            <div class="card-header">Sales Data</div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Plan</th>
+                                <th class="text-end">Sales</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in sales_by_plan %}
+                            <tr>
+                                <td>{{ item.plan_name }}</td>
+                                <td class="text-end fw-bold">{{ item.count }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="2" class="empty-state py-4">No data</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <div class="card animate-in">
+            <div class="card-header">Revenue Data</div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Plan</th>
+                                <th class="text-end">Revenue</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in revenue_by_plan %}
+                            <tr>
+                                <td>{{ item.plan_name }}</td>
+                                <td class="text-end fw-bold">₱{{ item.total }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="2" class="empty-state py-4">No data</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Standard white/gray colors for minimalist dark mode
+    const colors = {
+        primary: '#ffffff',
+        secondary: '#d4d4d4',
+        muted: '#888888',
+        border: '#2a2a2a',
+        success: '#22c55e',
+        danger: '#ef4444',
+        warning: '#eab308',
+        info: '#3b82f6',
+        chart: ['#ffffff', '#a3a3a3', '#737373', '#404040', '#262626']
+    };
+    
+    Chart.defaults.color = colors.muted;
+    Chart.defaults.borderColor = colors.border;
+    
+    // Sales Chart
+    const salesCtx = document.getElementById('salesChart');
+    if (salesCtx) {
+        new Chart(salesCtx, {
+            type: 'bar',
+            data: {
+                labels: [{% for item in sales_by_plan %}'{{ item.plan_name }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+                datasets: [{
+                    label: 'Sales Count',
+                    data: [{% for item in sales_by_plan %}{{ item.count }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+                    backgroundColor: colors.primary,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: colors.border } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    }
+    
+    // Revenue Chart
+    const revenueCtx = document.getElementById('revenueChart');
+    if (revenueCtx) {
+        new Chart(revenueCtx, {
+            type: 'doughnut',
+            data: {
+                labels: [{% for item in revenue_by_plan %}'{{ item.plan_name }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+                datasets: [{
+                    data: [{% for item in revenue_by_plan %}{{ item.total }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+                    backgroundColor: colors.chart,
+                    borderWidth: 1,
+                    borderColor: '#151515'
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+    }
+    
+    // Hourly Chart
+    const hourlyCtx = document.getElementById('hourlyChart');
+    if (hourlyCtx) {
+        const hourlyData = {{ hourly_distribution|safe }};
+        const hours = Object.keys(hourlyData).map(h => {
+            const hour = parseInt(h);
+            if (hour === 0) return '12A';
+            if (hour < 12) return hour + 'A';
+            if (hour === 12) return '12P';
+            return (hour - 12) + 'P';
+        });
+        const values = Object.values(hourlyData);
+        
+        new Chart(hourlyCtx, {
+            type: 'line',
+            data: {
+                labels: hours,
+                datasets: [{
+                    label: 'Check-ins',
+                    data: values,
+                    borderColor: colors.primary,
+                    borderWidth: 2,
+                    pointBackgroundColor: colors.primary,
+                    tension: 0.3,
+                    fill: false
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: colors.border } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    }
+    
+    // Churn Chart
+    const churnCtx = document.getElementById('churnChart');
+    if (churnCtx) {
+        new Chart(churnCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Low', 'Medium', 'High'],
+                datasets: [{
+                    data: [{{ churn_distribution.Low }}, {{ churn_distribution.Medium }}, {{ churn_distribution.High }}],
+                    backgroundColor: [colors.success, colors.warning, colors.danger],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

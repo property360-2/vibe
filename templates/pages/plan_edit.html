@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Edit Plan: {{ plan.name }}</h5>
+    </div>
+    <div class="card-body">
+        {% include 'organisms/plan_form.html' with form=form %}
+    </div>
+</div>
+{% endblock %}

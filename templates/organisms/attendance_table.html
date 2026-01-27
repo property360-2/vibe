@@ -1,0 +1,37 @@
+{# Organism: Attendance Table #}
+{# Usage: {% include 'organisms/attendance_table.html' with attendances=attendances %} #}
+
+<div class="table-responsive">
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>Member</th>
+                <th>Pass</th>
+                <th>Check-in Time</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for attendance in attendances %}
+            <tr>
+                <td>
+                    <a href="{% url 'member_detail' attendance.member.pk %}" class="text-decoration-none text-white fw-medium">
+                        {{ attendance.member.name }}
+                    </a>
+                </td>
+                <td>{{ attendance.membership_pass.membership_plan.name }}</td>
+                <td>
+                    <span class="material-icons me-1 text-success" style="font-size: 1rem; vertical-align: middle;">schedule</span>
+                    {{ attendance.checked_in_at|time:"g:i A" }}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3" class="text-center text-muted py-5">
+                    <span class="material-icons mb-2" style="font-size: 3rem; opacity: 0.3;">event_busy</span>
+                    <p class="mb-0">No check-ins recorded yet</p>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

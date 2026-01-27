@@ -1,0 +1,18 @@
+<form method="POST" id="memberForm" class="{% if ajax %}ajax-form{% endif %}">
+    {% csrf_token %}
+    
+    <div id="memberFormErrors" class="alert alert-danger mb-3 d-none"></div>
+    
+    {% include 'atoms/input.html' with field=form.name label="Full Name" %}
+    {% include 'atoms/input.html' with field=form.phone label="Phone Number" help_text="Optional" %}
+    
+    <div class="d-flex gap-2 mt-4">
+        {% include 'atoms/button.html' with text="Save Member" type="primary" icon="save" id="saveMemberBtn" %}
+        {% if member %}
+        <a href="{% url 'member_detail' member.pk %}" class="btn btn-outline-light">Cancel</a>
+        {% else %}
+        <a href="{% url 'members_list' %}" class="btn btn-outline-light" data-bs-dismiss="modal">Cancel</a>
+        {% endif %}
+    </div>
+</form>
+

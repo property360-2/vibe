@@ -1,0 +1,22 @@
+{# Molecule: Pass Row #}
+{# Usage: {% include 'molecules/pass_row.html' with pass=pass %} #}
+
+<tr>
+    <td>
+        <a href="{% url 'member_detail' pass.member.pk %}" class="text-decoration-none fw-medium text-white">
+            {{ pass.member.name }}
+        </a>
+    </td>
+    <td>{{ pass.membership_plan.name }}</td>
+    <td>{{ pass.start_date|date:"M d, Y" }}</td>
+    <td>{{ pass.end_date|date:"M d, Y" }}</td>
+    <td class="fw-bold">₱{{ pass.price_snapshot }}</td>
+    <td>
+        {% if pass.status == 'active' %}
+            {% include 'atoms/badge.html' with type="active" text="Active" %}
+            <small class="text-muted ms-1">({{ pass.days_remaining }} days left)</small>
+        {% else %}
+            {% include 'atoms/badge.html' with type="expired" text="Expired" %}
+        {% endif %}
+    </td>
+</tr>

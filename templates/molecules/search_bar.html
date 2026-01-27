@@ -1,0 +1,11 @@
+{# Molecule: Search Bar #}
+{# Usage: {% include 'molecules/search_bar.html' with placeholder="Search members..." name="q" value=query %} #}
+
+<form method="GET" class="search-bar">
+    <span class="material-icons">search</span>
+    <input type="text" 
+           name="{{ name|default:'q' }}" 
+           class="form-control" 
+           placeholder="{{ placeholder|default:'Search...' }}"
+           value="{{ value|default:'' }}">
+</form>

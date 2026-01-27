@@ -1,0 +1,28 @@
+{# Organism: AI Insights Box - Minimalist Design #}
+{# Usage: {% include 'organisms/ai_insights_box.html' with ai_insights=ai_insights %} #}
+
+<div class="ai-insights-box animate-in animate-delay-4">
+    <h5>
+        <span class="material-icons">psychology</span>
+        AI Insights
+    </h5>
+    
+    <div class="mb-3">
+        <small class="text-muted text-uppercase" style="font-size: 0.6875rem; letter-spacing: 0.5px;">Insights</small>
+        {% for insight in ai_insights.insights %}
+        <div class="insight-item">{{ insight }}</div>
+        {% empty %}
+        <div class="insight-item">No insights available yet.</div>
+        {% endfor %}
+    </div>
+    
+    <div>
+        <small class="text-muted text-uppercase" style="font-size: 0.6875rem; letter-spacing: 0.5px;">Recommendations</small>
+        {% for rec in ai_insights.recommendations %}
+        <div class="insight-item">{{ rec }}</div>
+        {% empty %}
+        <div class="insight-item">No recommendations available yet.</div>
+        {% endfor %}
+    </div>
+    
+</div>

@@ -1,0 +1,26 @@
+{# Organism: Pass Form (Sell Pass) #}
+{# Usage: {% include 'organisms/pass_form.html' with form=form %} #}
+
+<form method="POST">
+    {% csrf_token %}
+    
+    {% if form.non_field_errors %}
+    <div class="alert alert-danger">
+        {% for error in form.non_field_errors %}
+            {{ error }}
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    {% include 'atoms/select.html' with field=form.member label="Select Member" %}
+    {% include 'atoms/select.html' with field=form.membership_plan label="Select Plan" %}
+    
+    <div class="alert alert-info mt-3">
+        <span class="material-icons me-2" style="vertical-align: middle;">info</span>
+        Pass will start today and the plan price will be locked at time of purchase.
+    </div>
+    
+    <div class="d-flex gap-2 mt-4">
+        {% include 'atoms/button.html' with text="Sell Pass" type="success" icon="sell" name="sell" %}
+    </div>
+</form>

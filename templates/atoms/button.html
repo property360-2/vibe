@@ -1,0 +1,17 @@
+{# Atom: Button Component - Minimalist Design #}
+{# Usage: {% include 'atoms/button.html' with text="Submit" type="primary" icon="save" %} #}
+
+{% if href %}
+<a href="{{ href }}" class="btn btn-{{ type|default:'primary' }} {{ class|default:'' }}">
+    {% if icon %}<span class="material-icons me-1" style="font-size: 1rem;">{{ icon }}</span>{% endif %}
+    {{ text }}
+</a>
+{% else %}
+<button type="{{ btn_type|default:'submit' }}" 
+        class="btn btn-{{ type|default:'primary' }} {{ class|default:'' }}"
+        name="{{ name|default:'' }}"
+        {% if disabled %}disabled{% endif %}>
+    {% if icon %}<span class="material-icons me-1" style="font-size: 1rem;">{{ icon }}</span>{% endif %}
+    {{ text }}
+</button>
+{% endif %}

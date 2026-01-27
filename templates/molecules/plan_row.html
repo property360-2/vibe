@@ -1,0 +1,30 @@
+{# Molecule: Plan Row #}
+{# Usage: {% include 'molecules/plan_row.html' with plan=plan %} #}
+
+<tr>
+    <td>
+        <div class="d-flex align-items-center">
+            <span class="material-icons me-2 text-primary">card_membership</span>
+            <span class="fw-medium">{{ plan.name }}</span>
+        </div>
+    </td>
+    <td>{{ plan.duration_days }} days</td>
+    <td class="fw-bold">₱{{ plan.price }}</td>
+    <td>
+        {% if plan.is_active %}
+            {% include 'atoms/badge.html' with type="active" text="Active" %}
+        {% else %}
+            {% include 'atoms/badge.html' with type="expired" text="Inactive" %}
+        {% endif %}
+    </td>
+    <td>
+        <div class="btn-group">
+            <a href="{% url 'plan_edit' plan.pk %}" class="btn btn-sm btn-outline-light" title="Edit">
+                <span class="material-icons" style="font-size: 1rem;">edit</span>
+            </a>
+            <a href="{% url 'plan_delete' plan.pk %}" class="btn btn-sm btn-outline-danger" title="Delete">
+                <span class="material-icons" style="font-size: 1rem;">delete</span>
+            </a>
+        </div>
+    </td>
+</tr>

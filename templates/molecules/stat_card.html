@@ -1,0 +1,10 @@
+{# Molecule: Stat Card - Minimalist Design #}
+{# Usage: {% include 'molecules/stat_card.html' with value="42" label="Check-ins" icon="login" %} #}
+
+<div class="card stat-card animate-in animate-delay-{{ delay|default:'1' }}">
+    <div class="card-body">
+        <span class="stat-icon material-icons">{{ icon|default:'analytics' }}</span>
+        <p class="stat-value">{{ value }}</p>
+        <p class="stat-label">{{ label }}</p>
+    </div>
+</div>

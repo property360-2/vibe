@@ -1,0 +1,17 @@
+{# Organism: Dashboard Stats Grid #}
+{# Usage: {% include 'organisms/dashboard_stats.html' with today_checkins=10 active_passes=5 %} #}
+
+<div class="row g-4 mb-4">
+    <div class="col-md-6 col-lg-3">
+        {% include 'molecules/stat_card.html' with value=today_checkins label="Today's Check-ins" icon="login" variant="primary" delay="0.1" %}
+    </div>
+    <div class="col-md-6 col-lg-3">
+        {% include 'molecules/stat_card.html' with value=active_passes label="Active Passes" icon="card_membership" variant="success" delay="0.2" %}
+    </div>
+    <div class="col-md-6 col-lg-3">
+        {% include 'molecules/stat_card.html' with value=expired_passes label="Expired Passes" icon="event_busy" variant="danger" delay="0.3" %}
+    </div>
+    <div class="col-md-6 col-lg-3">
+        {% include 'molecules/stat_card.html' with value="₱"|add:revenue_today|stringformat:"s" label="Revenue Today" icon="payments" variant="info" delay="0.4" %}
+    </div>
+</div>

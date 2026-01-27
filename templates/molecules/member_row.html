@@ -1,0 +1,40 @@
+{# Molecule: Member Row #}
+{# Usage: {% include 'molecules/member_row.html' with member=member %} #}
+
+<tr>
+    <td>
+        <div class="d-flex align-items-center">
+            <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center me-3" 
+                 style="width: 40px; height: 40px; background: var(--primary-gradient) !important;">
+                <span class="text-white fw-bold">{{ member.name|slice:":1"|upper }}</span>
+            </div>
+            <div>
+                <a href="{% url 'member_detail' member.pk %}" class="text-decoration-none fw-medium text-white">
+                    {{ member.name }}
+                </a>
+                <div class="small text-muted">{{ member.phone|default:"No phone" }}</div>
+            </div>
+        </div>
+    </td>
+    <td>
+        {% if member.has_active_pass %}
+            {% include 'atoms/badge.html' with type="active" text="Active Pass" %}
+        {% else %}
+            {% include 'atoms/badge.html' with type="expired" text="No Active Pass" %}
+        {% endif %}
+    </td>
+    <td>{{ member.created_at|date:"M d, Y" }}</td>
+    <td>
+        <div class="btn-group">
+            <a href="{% url 'member_detail' member.pk %}" class="btn btn-sm btn-outline-light" title="View">
+                <span class="material-icons" style="font-size: 1rem;">visibility</span>
+            </a>
+            <a href="{% url 'member_edit' member.pk %}" class="btn btn-sm btn-outline-light" title="Edit">
+                <span class="material-icons" style="font-size: 1rem;">edit</span>
+            </a>
+            <a href="{% url 'member_delete' member.pk %}" class="btn btn-sm btn-outline-danger" title="Delete">
+                <span class="material-icons" style="font-size: 1rem;">delete</span>
+            </a>
+        </div>
+    </td>
+</tr>

@@ -1,0 +1,7 @@
+{# Atom: Icon Component #}
+{# Usage: {% include 'atoms/icon.html' with name="dashboard" size="24" %} #}
+
+<span class="material-icons{% if outlined %}-outlined{% endif %}" 
+      style="{% if size %}font-size: {{ size }}px;{% endif %} {% if color %}color: {{ color }};{% endif %} vertical-align: middle;">
+    {{ name }}
+</span>

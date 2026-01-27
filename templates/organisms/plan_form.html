@@ -1,0 +1,22 @@
+{# Organism: Plan Form #}
+{# Usage: {% include 'organisms/plan_form.html' with form=form %} #}
+
+<form method="POST">
+    {% csrf_token %}
+    
+    {% include 'atoms/input.html' with field=form.name label="Plan Name" %}
+    {% include 'atoms/input.html' with field=form.duration_days label="Duration (Days)" %}
+    {% include 'atoms/input.html' with field=form.price label="Price (PHP)" %}
+    
+    <div class="form-check mb-3">
+        {{ form.is_active }}
+        <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+            Active (visible for sale)
+        </label>
+    </div>
+    
+    <div class="d-flex gap-2 mt-4">
+        {% include 'atoms/button.html' with text="Save Plan" type="primary" icon="save" name="create" %}
+        <a href="{% url 'plans_list' %}" class="btn btn-outline-light">Cancel</a>
+    </div>
+</form>
