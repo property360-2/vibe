@@ -1,48 +1,65 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<!-- Summary Cards -->
-<div class="row g-3 mb-4">
-    <div class="col-6 col-lg-3">
-        <div class="card stat-card animate-in animate-delay-1">
-            <div class="card-body">
-                <span class="stat-icon material-icons">payments</span>
-                <p class="stat-value">₱{{ total_revenue }}</p>
-                <p class="stat-label">Total Revenue</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-6 col-lg-3">
-        <div class="card stat-card animate-in animate-delay-2">
-            <div class="card-body">
-                <span class="stat-icon material-icons">star</span>
-                <p class="stat-value" style="font-size: 1.25rem;">{{ popular_plan }}</p>
-                <p class="stat-label">Most Popular Plan</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-6 col-lg-3">
-        <div class="card stat-card animate-in animate-delay-3">
-            <div class="card-body">
-                <span class="stat-icon material-icons text-success">thumb_up</span>
-                <p class="stat-value">{{ churn_distribution.Low }}</p>
-                <p class="stat-label">Low Risk Members</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-6 col-lg-3">
-        <div class="card stat-card animate-in animate-delay-4">
-            <div class="card-body">
-                <span class="stat-icon material-icons text-danger">warning</span>
-                <p class="stat-value">{{ churn_distribution.High }}</p>
-                <p class="stat-label">High Risk Members</p>
-            </div>
-        </div>
-    </div>
+<div class="mb-4">
+    <ul class="nav nav-tabs" id="reportsTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">Overview</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="attendance-tab" data-bs-toggle="tab" data-bs-target="#attendance" type="button" role="tab" onclick="loadTab('attendance')">Attendance</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="passes-tab" data-bs-toggle="tab" data-bs-target="#passes" type="button" role="tab" onclick="loadTab('passes')">Pass Transactions</button>
+        </li>
+    </ul>
 </div>
 
-<!-- Charts Row -->
-<div class="row g-3 mb-4">
+<div class="tab-content" id="reportsTabContent">
+    <!-- Overview Tab -->
+    <div class="tab-pane fade show active" id="overview" role="tabpanel">
+        <!-- Summary Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-lg-3">
+                <div class="card stat-card animate-in animate-delay-1">
+                    <div class="card-body">
+                        <span class="stat-icon material-icons">payments</span>
+                        <p class="stat-value">₱{{ total_revenue }}</p>
+                        <p class="stat-label">Total Revenue</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="card stat-card animate-in animate-delay-2">
+                    <div class="card-body">
+                        <span class="stat-icon material-icons">star</span>
+                        <p class="stat-value" style="font-size: 1.25rem;">{{ popular_plan }}</p>
+                        <p class="stat-label">Most Popular Plan</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="card stat-card animate-in animate-delay-3">
+                    <div class="card-body">
+                        <span class="stat-icon material-icons text-success">thumb_up</span>
+                        <p class="stat-value">{{ churn_distribution.Low }}</p>
+                        <p class="stat-label">Low Risk Members</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="card stat-card animate-in animate-delay-4">
+                    <div class="card-body">
+                        <span class="stat-icon material-icons text-danger">warning</span>
+                        <p class="stat-value">{{ churn_distribution.High }}</p>
+                        <p class="stat-label">High Risk Members</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="row g-3 mb-4">
     <!-- Sales by Plan -->
     <div class="col-lg-6">
         <div class="card h-100 animate-in animate-delay-1">
@@ -86,28 +103,84 @@
     </div>
 </div>
 
-<!-- Data Tables -->
-<div class="row g-3">
-    <div class="col-lg-6">
+    </div>
+
+    <!-- Attendance Tab -->
+    <div class="tab-pane fade" id="attendance" role="tabpanel">
         <div class="card animate-in">
-            <div class="card-header">Sales Data</div>
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Recent Attendance</span>
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        Sort By
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="#" onclick="sortData('attendance', '-date')">Date (Newest)</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="sortData('attendance', 'date')">Date (Oldest)</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="sortData('attendance', 'member')">Member Name (A-Z)</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="sortData('attendance', '-member')">Member Name (Z-A)</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="sortData('attendance', 'status')">Status (Active First)</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Attendance Filters -->
+            <div class="card-body border-bottom bg-subtle">
+                <div class="row g-2 align-items-center">
+                    <div class="col-md-3">
+                        <label class="small text-muted mb-1">Start Date</label>
+                        <input type="date" class="form-control form-control-sm" id="attendance-start">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="small text-muted mb-1">End Date</label>
+                        <input type="date" class="form-control form-control-sm" id="attendance-end">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="small text-muted mb-1">Search</label>
+                        <div class="search-bar">
+                            <span class="material-icons" style="font-size: 1rem; left: 0.5rem;">search</span>
+                            <input type="text" class="form-control form-control-sm ps-4" id="attendance-search" placeholder="Search by member name...">
+                        </div>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button class="btn btn-sm btn-primary w-100" onclick="fetchData('attendance')">
+                            Apply Filter
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-hover mb-0">
+                    <table class="table table-hover mb-0" id="attendanceTable">
                         <thead>
                             <tr>
+                                <th>Date</th>
+                                <th>Member</th>
+                                <th>Time In</th>
+                                <th>Time Out</th>
                                 <th>Plan</th>
-                                <th class="text-end">Sales</th>
+                                <th>Status</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for item in sales_by_plan %}
+                            {% for record in recent_attendance %}
                             <tr>
-                                <td>{{ item.plan_name }}</td>
-                                <td class="text-end fw-bold">{{ item.count }}</td>
+                                <td>{{ record.checked_in_at|date:"M d, Y" }}</td>
+                                <td>{{ record.member.name }}</td>
+                                <td>{{ record.checked_in_at|time:"h:i A" }}</td>
+                                <td>{{ record.checked_out_at|time:"h:i A"|default:"-" }}</td>
+                                <td>{{ record.membership_pass.membership_plan.name }}</td>
+                                <td>
+                                    {% if record.checked_out_at %}
+                                        <span class="badge bg-secondary text-white">Completed</span>
+                                    {% else %}
+                                        <span class="badge badge-active">Active</span>
+                                    {% endif %}
+                                </td>
                             </tr>
                             {% empty %}
-                            <tr><td colspan="2" class="empty-state py-4">No data</td></tr>
+                            <tr><td colspan="6" class="empty-state py-4">No attendance records yet</td></tr>
                             {% endfor %}
                         </tbody>
                     </table>
@@ -115,27 +188,81 @@
             </div>
         </div>
     </div>
-    
-    <div class="col-lg-6">
+
+    <!-- Passes Tab -->
+    <div class="tab-pane fade" id="passes" role="tabpanel">
         <div class="card animate-in">
-            <div class="card-header">Revenue Data</div>
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Pass Transactions</span>
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        Sort By
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="#" onclick="sortData('passes', '-date')">Date (Newest)</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="sortData('passes', 'date')">Date (Oldest)</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="sortData('passes', 'member')">Member Name (A-Z)</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="sortData('passes', 'plan')">Plan Name</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="sortData('passes', '-price')">Price (High-Low)</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Passes Filters -->
+            <div class="card-body border-bottom bg-subtle">
+                <div class="row g-2 align-items-center">
+                    <div class="col-md-3">
+                        <label class="small text-muted mb-1">Start Date</label>
+                        <input type="date" class="form-control form-control-sm" id="passes-start">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="small text-muted mb-1">End Date</label>
+                        <input type="date" class="form-control form-control-sm" id="passes-end">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="small text-muted mb-1">Search</label>
+                        <div class="search-bar">
+                            <span class="material-icons" style="font-size: 1rem; left: 0.5rem;">search</span>
+                            <input type="text" class="form-control form-control-sm ps-4" id="passes-search" placeholder="Search member or plan...">
+                        </div>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button class="btn btn-sm btn-primary w-100" onclick="fetchData('passes')">
+                            Apply Filter
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-hover mb-0">
+                    <table class="table table-hover mb-0" id="passesTable">
                         <thead>
                             <tr>
+                                <th>Date Sold</th>
+                                <th>Member</th>
                                 <th>Plan</th>
-                                <th class="text-end">Revenue</th>
+                                <th>Price</th>
+                                <th>Status</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for item in revenue_by_plan %}
+                            {% for pass in recent_passes %}
                             <tr>
-                                <td>{{ item.plan_name }}</td>
-                                <td class="text-end fw-bold">₱{{ item.total }}</td>
+                                <td>{{ pass.start_date|date:"M d, Y" }}</td>
+                                <td>{{ pass.member.name }}</td>
+                                <td>{{ pass.membership_plan.name }}</td>
+                                <td>₱{{ pass.price_snapshot }}</td>
+                                <td>
+                                    {% if pass.status == 'active' %}
+                                        <span class="badge badge-active">Active</span>
+                                    {% else %}
+                                        <span class="badge badge-expired">Expired</span>
+                                    {% endif %}
+                                </td>
                             </tr>
                             {% empty %}
-                            <tr><td colspan="2" class="empty-state py-4">No data</td></tr>
+                            <tr><td colspan="5" class="empty-state py-4">No pass transactions yet</td></tr>
                             {% endfor %}
                         </tbody>
                     </table>
@@ -144,6 +271,115 @@
         </div>
     </div>
 </div>
+
+<script>
+// Keep track of current sort
+let currentSort = {
+    attendance: '-date',
+    passes: '-date'
+};
+
+function loadTab(tabName) {
+    // Optional: Could trigger a refresh here if needed
+}
+
+function sortData(tab, newSortBy) {
+    currentSort[tab] = newSortBy;
+    fetchData(tab);
+}
+
+// Attach input listeners with debounce
+document.addEventListener('DOMContentLoaded', function() {
+    let debounceTimeouts = {};
+
+    ['attendance', 'passes'].forEach(tab => {
+        const input = document.getElementById(`${tab}-search`);
+        if (input) {
+            input.addEventListener('input', function(e) {
+                clearTimeout(debounceTimeouts[tab]);
+                debounceTimeouts[tab] = setTimeout(() => {
+                    fetchData(tab);
+                }, 300); // 300ms debounce
+            });
+        }
+    });
+});
+
+async function fetchData(tab) {
+    const tableId = tab === 'attendance' ? 'attendanceTable' : 'passesTable';
+    const tbody = document.querySelector(`#${tableId} tbody`);
+    
+    // Get filter values
+    const startDate = document.getElementById(`${tab}-start`).value;
+    const endDate = document.getElementById(`${tab}-end`).value;
+    const search = document.getElementById(`${tab}-search`).value;
+    const sortBy = currentSort[tab];
+
+    // Show loading state
+    tbody.style.opacity = '0.5';
+    
+    try {
+        const params = new URLSearchParams({
+            tab: tab,
+            sort_by: sortBy,
+            start_date: startDate,
+            end_date: endDate,
+            search: search
+        });
+
+        const response = await fetch(`{% url 'reports' %}?${params.toString()}`, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (result.status === 'success') {
+            tbody.innerHTML = '';
+            
+            if (result.data.length === 0) {
+                const cols = tab === 'attendance' ? 6 : 5;
+                tbody.innerHTML = `<tr><td colspan="${cols}" class="empty-state py-4">No records found matching criteria</td></tr>`;
+            } else {
+                result.data.forEach(item => {
+                    let row = '';
+                    if (tab === 'attendance') {
+                        const badgeClass = item.status === 'Active' ? 'badge-active' : 'bg-secondary text-white';
+                        row = `
+                            <tr>
+                                <td>${item.date}</td>
+                                <td>${item.member}</td>
+                                <td>${item.time_in}</td>
+                                <td>${item.time_out}</td>
+                                <td>${item.plan}</td>
+                                <td><span class="badge ${badgeClass}">${item.status}</span></td>
+                            </tr>
+                        `;
+                    } else {
+                        const badgeClass = item.status === 'Active' ? 'badge-active' : 'badge-expired';
+                        row = `
+                            <tr>
+                                <td>${item.date}</td>
+                                <td>${item.member}</td>
+                                <td>${item.plan}</td>
+                                <td>₱${item.price}</td>
+                                <td><span class="badge ${badgeClass}">${item.status}</span></td>
+                            </tr>
+                        `;
+                    }
+                    tbody.innerHTML += row;
+                });
+            }
+        }
+    } catch (error) {
+        console.error('Error fetching data:', error);
+        showNotification('Error', 'Failed to fetch data', 'error');
+    } finally {
+        tbody.style.opacity = '1';
+    }
+}
+</script>
 {% endblock %}
 
 {% block extra_js %}

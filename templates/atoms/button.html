@@ -10,6 +10,7 @@
 <button type="{{ btn_type|default:'submit' }}" 
         class="btn btn-{{ type|default:'primary' }} {{ class|default:'' }}"
         name="{{ name|default:'' }}"
+        {% if id %}id="{{ id }}"{% endif %}
         {% if disabled %}disabled{% endif %}>
     {% if icon %}<span class="material-icons me-1" style="font-size: 1rem;">{{ icon }}</span>{% endif %}
     {{ text }}

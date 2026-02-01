@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row mb-4 align-items-center">
+    <div class="col">
+        <h4 class="mb-0 fw-bold">Transaction History</h4>
+    </div>
+    <div class="col-auto">
+        <span class="badge bg-secondary bg-opacity-25 text-muted px-3 py-2" id="recordCount">
+            {{ transactions.count }} Records
+        </span>
+    </div>
+</div>
+
+<div class="card bg-dark border-secondary mb-4 shadow-sm">
+    <div class="card-body">
+        <form id="filterForm" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label small text-muted text-uppercase fw-bold">Categorize</label>
+                <select name="date_range" class="form-select bg-dark border-secondary text-light">
+                    <option value="all">All Time</option>
+                    <option value="this_month">This Month</option>
+                    <option value="last_3_months">Last 3 Months</option>
+                    <option value="this_year">This Year</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small text-muted text-uppercase fw-bold">Status</label>
+                <select name="status" class="form-select bg-dark border-secondary text-light">
+                    <option value="all">All Statuses</option>
+                    <option value="active">Active Only</option>
+                    <option value="expired">Expired Only</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small text-muted text-uppercase fw-bold">Sort By</label>
+                <select name="sort" class="form-select bg-dark border-secondary text-light">
+                    <option value="-created_at">Date (Newest First)</option>
+                    <option value="created_at">Date (Oldest First)</option>
+                    <option value="-price_snapshot">Price (High to Low)</option>
+                    <option value="price_snapshot">Price (Low to High)</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="button" id="resetBtn" class="btn btn-outline-secondary w-100">Reset Filters</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card bg-dark border-secondary">
+    <div class="card-body p-0 position-relative">
+        <!-- Loading Overlay -->
+        <div id="loadingOverlay" class="position-absolute top-0 start-0 w-100 h-100 d-none bg-dark bg-opacity-50 d-flex align-items-center justify-content-center" style="z-index: 10;">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="table table-hover table-dark border-secondary align-middle mb-0">
+                <thead class="bg-secondary bg-opacity-10 text-muted small">
+                    <tr>
+                        <th class="py-3 px-4">Date Purchased</th>
+                        <th class="py-3">Plan</th>
+                        <th class="py-3">Validation Period</th>
+                        <th class="py-3">Price</th>
+                        <th class="py-3 px-4">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="transactionBody">
+                    {% include 'partials/transaction_rows.html' %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    const filterForm = document.getElementById('filterForm');
+    const transactionBody = document.getElementById('transactionBody');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    const resetBtn = document.getElementById('resetBtn');
+
+    function updateTransactions() {
+        const formData = new FormData(filterForm);
+        const params = new URLSearchParams();
+        
+        for (const [key, value] of formData.entries()) {
+            if (value !== 'all') {
+                params.append(key, value);
+            }
+        }
+        
+        loadingOverlay.classList.remove('d-none');
+        
+        fetch(`${window.location.pathname}?${params.toString()}`, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.text())
+        .then(html => {
+            transactionBody.innerHTML = html;
+            // Update record count badge if needed (can be passed in header or as data attribute)
+            const count = transactionBody.querySelectorAll('tr:not(.empty-message)').length;
+            // Simplified: just refresh the page partial
+            loadingOverlay.classList.add('d-none');
+        })
+        .catch(err => {
+            console.error('Error fetching transactions:', err);
+            loadingOverlay.classList.add('d-none');
+        });
+    }
+
+    // Listen for changes
+    filterForm.querySelectorAll('select').forEach(select => {
+        select.addEventListener('change', updateTransactions);
+    });
+
+    resetBtn.addEventListener('click', () => {
+        filterForm.reset();
+        updateTransactions();
+    });
+</script>
+{% endblock %}

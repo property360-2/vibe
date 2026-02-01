@@ -1,464 +1,291 @@
-"""
-Business Logic, Analytics, ML, and AI Prompt Builders
-"""
-from django.db.models import Count, Sum, F
-from django.db.models.functions import ExtractHour, TruncDate
+from decimal import Decimal
 from django.utils import timezone
 from datetime import timedelta
-from decimal import Decimal
-import numpy as np
+from django.db.models import Count, Q
+from django.db.models.functions import ExtractWeekDay, ExtractHour
+from .models import Workout, Attendance
 
-from .models import Member, MembershipPlan, MembershipPass, Attendance
-
-
-# =============================================================================
-# DASHBOARD ANALYTICS
-# =============================================================================
-
-def get_today_checkins():
-    """Count today's check-ins"""
-    today = timezone.now().date()
-    return Attendance.objects.filter(
-        checked_in_at__date=today
-    ).count()
-
-
-def get_active_passes_count():
-    """Count currently active passes"""
-    today = timezone.now().date()
-    return MembershipPass.objects.filter(
-        start_date__lte=today,
-        end_date__gte=today,
-        status='active'
-    ).count()
-
-
-def get_expired_passes_count():
-    """Count expired passes"""
-    today = timezone.now().date()
-    # Update expired passes first
-    MembershipPass.objects.filter(
-        end_date__lt=today,
-        status='active'
-    ).update(status='expired')
-    
-    return MembershipPass.objects.filter(status='expired').count()
-
-
-def get_revenue_today():
-    """Sum of price_snapshot for passes sold today"""
-    today = timezone.now().date()
-    result = MembershipPass.objects.filter(
-        created_at__date=today
-    ).aggregate(total=Sum('price_snapshot'))
-    return result['total'] or Decimal('0.00')
-
-
-def get_total_revenue():
-    """Total revenue from all passes"""
-    result = MembershipPass.objects.aggregate(total=Sum('price_snapshot'))
-    return result['total'] or Decimal('0.00')
-
-
-# =============================================================================
-# PEAK TIME ANALYTICS
-# =============================================================================
-
-def get_peak_hour():
-    """
-    Determine the peak hour of check-ins.
-    Returns tuple: (peak_hour, count) or (None, 0) if no data
-    """
-    peak_data = Attendance.objects.annotate(
-        hour=ExtractHour('checked_in_at')
-    ).values('hour').annotate(
-        count=Count('id')
-    ).order_by('-count').first()
-    
-    if peak_data:
-        return (peak_data['hour'], peak_data['count'])
-    return (None, 0)
-
-
-def format_peak_hour(hour):
-    """Format hour (0-23) to readable time range"""
-    if hour is None:
-        return "No data"
-    
-    start_hour = hour
-    end_hour = (hour + 1) % 24
-    
-    def format_time(h):
-        if h == 0:
-            return "12:00 AM"
-        elif h < 12:
-            return f"{h}:00 AM"
-        elif h == 12:
-            return "12:00 PM"
+class FitnessService:
+    @staticmethod
+    def calculate_bmi(height_cm, weight_kg):
+        """
+        Calculate BMI and return value and category.
+        height_cm: Decimal or float
+        weight_kg: Decimal or float
+        Returns: dict with 'value' (Decimal) and 'category' (str)
+        """
+        if not height_cm or not weight_kg:
+            return None
+            
+        height_m = float(height_cm) / 100
+        weight = float(weight_kg)
+        
+        if height_m <= 0:
+            return None
+            
+        bmi = weight / (height_m ** 2)
+        bmi_value = round(bmi, 2)
+        
+        if bmi < 18.5:
+            category = 'Underweight'
+        elif 18.5 <= bmi <= 24.9:
+            category = 'Normal'
+        elif 25 <= bmi <= 29.9:
+            category = 'Overweight'
         else:
-            return f"{h-12}:00 PM"
-    
-    return f"{format_time(start_hour)} – {format_time(end_hour)}"
+            category = 'Obese'
+            
+        return {
+            'value': bmi_value,
+            'category': category
+        }
 
+    @staticmethod
+    def generate_weekly_structure(profile):
+        """
+        Generate a flexible weekly workout structure based on profile.
+        Returns: dict of days {1: ['Group A', 'Group B'], ...}
+        """
+        days_count = profile.training_days
+        goal = profile.primary_goal
 
-def get_hourly_distribution():
-    """Get check-in distribution by hour for charts"""
-    distribution = Attendance.objects.annotate(
-        hour=ExtractHour('checked_in_at')
-    ).values('hour').annotate(
-        count=Count('id')
-    ).order_by('hour')
-    
-    # Create full 24-hour distribution
-    hours = {i: 0 for i in range(24)}
-    for item in distribution:
-        hours[item['hour']] = item['count']
-    
-    return hours
+        
+        structure = {}
+        
+        # Muscle groups mapping
+        muscles = {
+            'Upper Push': ['Chest', 'Shoulders', 'Triceps'],
+            'Upper Pull': ['Back', 'Biceps', 'Forearms'],
+            'Legs': ['Quads', 'Hamstrings', 'Calves', 'Glutes'],
+            'Core': ['Abs', 'Obliques']
+        }
+        
+        # Simple distribution logic based on days
+        if days_count == 1:
+            # Full Body (Once a week)
+            structure = {
+                1: ['Chest', 'Back', 'Legs', 'Shoulders', 'Arms', 'Core']
+            }
+        elif days_count == 2:
+            # Upper/Lower split (Twice a week)
+            structure = {
+                1: ['Chest', 'Back', 'Shoulders', 'Arms'],
+                2: ['Legs', 'Core']
+            }
+        elif days_count == 3:
+            # Full Body split
+            structure = {
+                1: ['Chest', 'Back', 'Legs', 'Core'],
+                2: ['Shoulders', 'Arms', 'Legs', 'Core'],
+                3: ['Chest', 'Back', 'Shoulders', 'Legs']
+            }
+        elif days_count == 4:
+            # Upper/Lower split
+            structure = {
+                1: ['Chest', 'Back', 'Shoulders', 'Arms'],
+                2: ['Quads', 'Hamstrings', 'Calves', 'Core'],
+                3: ['Chest', 'Back', 'Shoulders', 'Arms'],
+                4: ['Quads', 'Hamstrings', 'Calves', 'Core']
+            }
+        elif days_count == 5:
+            # PPL + Upper/Lower hybrid
+            structure = {
+                1: ['Chest', 'Shoulders', 'Triceps'],
+                2: ['Back', 'Biceps', 'Rear Delts'],
+                3: ['Legs', 'Core'],
+                4: ['Upper Body'],
+                5: ['Lower Body']
+            }
+        else: # 6 days
+            # PPL Split adjusted
+            structure = {
+                1: ['Chest', 'Shoulders', 'Triceps'],
+                2: ['Back', 'Biceps', 'Rear Delts'],
+                3: ['Quads', 'Hamstrings', 'Calves', 'Core'],
+                4: ['Chest', 'Shoulders', 'Triceps'],
+                5: ['Back', 'Biceps', 'Rear Delts'],
+                6: ['Legs', 'Core']
+            }
+            
+        # Customize based on priority (naive implementation: ensure priority is present or highlighted)
+        # For now, we'll just return the base structure structure as a starting point.
+        # A more complex system would dynamically insert priority muscles more often.
+        
+        return structure
 
+    @staticmethod
+    def generate_objectives(profile):
+        """
+        Generate objectives based on goal and experience.
+        """
+        goal_map = {
+            'muscle_gain': "Build lean muscle mass and improve body composition.",
+            'fat_loss': "Reduce body fat while maintaining muscle mass.",
+            'strength': "Increase overall strength and major compound lift numbers.",
+            'endurance': "Improve cardiovascular health and muscular stamina.",
+            'general': "Maintain a healthy lifestyle and consistent activity levels."
+        }
+        
+        primary = goal_map.get(profile.primary_goal, "Improve overall fitness.")
+        
+        training = [
+            f"Train consistently {profile.training_days} days per week.",
+            "Focus on proper form and technique.",
+            "Prioritize recovery and sleep."
+        ]
+        
+        if profile.primary_goal == 'muscle_gain':
+            training.append("Aim for progressive overload in every session.")
+        elif profile.primary_goal == 'fat_loss':
+            training.append("Maintain a caloric deficit and stay active daily.")
+            
+        if getattr(profile, 'savage_mode', False):
+            training.append("Stop making excuses and just do the work. 💀")
+            training.append("Consistency is a choice. You're either in or out.")
+            
+        return {
+            'primary': primary,
+            'training': training
+        }
 
-# =============================================================================
-# REPORTS ANALYTICS
-# =============================================================================
+    @staticmethod
+    def get_recommended_workouts(profile):
+        """
+        Get recommended workouts from the library based on profile.
+        """
+        workouts = Workout.objects.filter(is_active=True)
+        
+        # Filter by difficulty
+        if profile.experience == 'beginner':
+            workouts = workouts.filter(difficulty='beginner')
+        elif profile.experience == 'intermediate':
+            workouts = workouts.filter(difficulty__in=['beginner', 'intermediate'])
+        # Advanced sees all
+        
+        # Filter by goal (loose matching)
+        if profile.primary_goal in ['muscle_gain', 'strength']:
+            workouts = workouts.filter(goal_type__in=['muscle_gain', 'strength', 'general'])
+        elif profile.primary_goal == 'fat_loss':
+             workouts = workouts.filter(goal_type__in=['fat_loss', 'general', 'endurance'])
+             
+        return workouts[:5]  # Return top 5 recommendations
 
-def get_sales_count_by_plan():
-    """Count of passes sold per plan"""
-    return MembershipPass.objects.values(
-        'membership_plan__name'
-    ).annotate(
-        count=Count('id'),
-        plan_name=F('membership_plan__name')
-    ).order_by('-count')
+    @staticmethod
+    def get_member_analytics(member):
+        """
+        Calculate comprehensive analytics for a member.
+        """
+        attendances = member.attendances.all()
+        now = timezone.now()
+        thirty_days_ago = now - timedelta(days=30)
+        
+        # 1. Activity Over Time (Past 30 Days)
+        history = []
+        for i in range(29, -1, -1):
+            date = (now - timedelta(days=i)).date()
+            count = attendances.filter(checked_in_at__date=date).count()
+            history.append({
+                'date': date.strftime('%b %d'),
+                'count': count
+            })
+            
+        # 2. Weekly Routine (By Day of Week)
+        # ExtractWeekDay returns 1 (Sunday) to 7 (Saturday)
+        weekday_stats = attendances.annotate(
+            weekday=ExtractWeekDay('checked_in_at')
+        ).values('weekday').annotate(count=Count('id')).order_by('weekday')
+        
+        days_label = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+        routine_data = [0] * 7
+        for stat in weekday_stats:
+            routine_data[stat['weekday'] - 1] = stat['count']
+            
+        # 3. Peak Training Hours
+        hour_stats = attendances.annotate(
+            hour=ExtractHour('checked_in_at')
+        ).values('hour').annotate(count=Count('id')).order_by('hour')
+        
+        peak_hours = []
+        for stat in hour_stats:
+            peak_hours.append({
+                'hour': f"{stat['hour']}:00",
+                'count': stat['count']
+            })
+            
+        # 4. Consistency Metrics
+        streak = 0
+        last_date = None
+        for i in range(60): # Check last 60 days for streak
+            d = (now - timedelta(days=i)).date()
+            if attendances.filter(checked_in_at__date=d).exists():
+                streak += 1
+            elif i > 0: # If missed today, don't break yet, check yesterday
+                break
+                
+        # 5. Conclusions (Motivating Insights)
+        conclusions = []
+        if streak >= 3:
+            conclusions.append(f"You're on a {streak}-day heater! Don't let the fire die out. 🔥")
+        
+        if routine_data[0] > 0 or routine_data[6] > 0:
+            conclusions.append("Weekend Warrior! You make time when others make excuses. 😤")
+            
+        # Peak analysis
+        if peak_hours:
+            most_frequent_hour = max(peak_hours, key=lambda x: x['count'])['hour']
+            hour_int = int(most_frequent_hour.split(':')[0])
+            if hour_int < 10:
+                conclusions.append("Early Bird! You're crushing it while the world sleeps. 🌅")
+            elif hour_int > 18:
+                conclusions.append("Night Owl! Finishing the day stronger than it started. 🦉")
+        
+        if not conclusions:
+            conclusions.append("Every visit is a victory. Keep showing up!")
 
+        return {
+            'history': history,
+            'routine': {
+                'labels': days_label,
+                'data': routine_data
+            },
+            'peak_hours': peak_hours,
+            'metrics': {
+                'total_visits': attendances.count(),
+                'streak': streak,
+                'monthly_visits': attendances.filter(checked_in_at__gte=thirty_days_ago).count(),
+            },
+            'conclusions': conclusions
+        }
 
-def get_revenue_by_plan():
-    """Total revenue per plan"""
-    return MembershipPass.objects.values(
-        'membership_plan__name'
-    ).annotate(
-        total=Sum('price_snapshot'),
-        plan_name=F('membership_plan__name')
-    ).order_by('-total')
-
-
-def get_most_popular_plan():
-    """Get the most sold plan"""
-    result = get_sales_count_by_plan()
-    if result:
-        top = list(result)[0]
-        return top['plan_name']
-    return "N/A"
-
-
-# =============================================================================
-# MEMBER ANALYTICS & CHURN PREDICTION
-# =============================================================================
-
-def calculate_member_features(member):
-    """
-    Calculate features for a member for ML prediction.
-    Returns: (days_left_on_pass, attendance_last_7_days, attendance_last_3_days)
-    """
-    today = timezone.now().date()
-    now = timezone.now()
-    
-    # Days left on pass
-    active_pass = member.get_active_pass()
-    if active_pass:
-        days_left = (active_pass.end_date - today).days + 1
-    else:
-        days_left = 0
-    
-    # Attendance in last 7 days
-    seven_days_ago = now - timedelta(days=7)
-    attendance_7 = Attendance.objects.filter(
-        member=member,
-        checked_in_at__gte=seven_days_ago
-    ).count()
-    
-    # Attendance in last 3 days
-    three_days_ago = now - timedelta(days=3)
-    attendance_3 = Attendance.objects.filter(
-        member=member,
-        checked_in_at__gte=three_days_ago
-    ).count()
-    
-    return (days_left, attendance_7, attendance_3)
 
 
 def predict_churn(member):
     """
-    Simple Logistic Regression churn prediction.
-    Returns: (return_probability, churn_risk_level)
-    
-    Uses scikit-learn if available, otherwise uses a simple heuristic.
+    Predict churn probability based on attendance.
+    Returns: (probability_of_return, risk_level_string)
     """
-    days_left, attendance_7, attendance_3 = calculate_member_features(member)
+    from django.utils import timezone
+    from datetime import timedelta
     
-    try:
-        from sklearn.linear_model import LogisticRegression
+    # Default values for new members
+    if not member.attendances.exists():
+        return 95.0, 'Low'
         
-        # Get training data from all members
-        members = Member.objects.all()
-        X = []
-        y = []
+    last_attendance = member.attendances.first()
+    days_since_last_visit = (timezone.now() - last_attendance.checked_in_at).days
+    
+    # Simple heuristic
+    if days_since_last_visit <= 7:
+        prob = 90 - (days_since_last_visit * 2)
+        risk = 'Low'
+    elif days_since_last_visit <= 14:
+        prob = 75 - ((days_since_last_visit - 7) * 3)
+        risk = 'Medium'
+    elif days_since_last_visit <= 30:
+        prob = 50 - ((days_since_last_visit - 14) * 2)
+        risk = 'High'
+    else:
+        prob = 10
+        risk = 'Critical'
         
-        for m in members:
-            features = calculate_member_features(m)
-            X.append(list(features))
-            # Synthetic labels: return if attendance >= 2 in last 7 days
-            y.append(1 if features[1] >= 2 else 0)
-        
-        if len(X) >= 3 and len(set(y)) > 1:  # Need enough data and both classes
-            X = np.array(X)
-            y = np.array(y)
-            
-            model = LogisticRegression(random_state=42, max_iter=1000)
-            model.fit(X, y)
-            
-            # Predict for this member
-            member_features = np.array([[days_left, attendance_7, attendance_3]])
-            prob = model.predict_proba(member_features)[0][1]
-        else:
-            # Fallback heuristic
-            prob = calculate_heuristic_probability(days_left, attendance_7, attendance_3)
-    
-    except ImportError:
-        # scikit-learn not available, use heuristic
-        prob = calculate_heuristic_probability(days_left, attendance_7, attendance_3)
-    
-    # Determine risk level
-    if prob >= 0.7:
-        risk_level = 'Low'
-    elif prob >= 0.4:
-        risk_level = 'Medium'
-    else:
-        risk_level = 'High'
-    
-    return (round(prob, 2), risk_level)
-
-
-def calculate_heuristic_probability(days_left, attendance_7, attendance_3):
-    """Fallback heuristic when ML is not available"""
-    score = 0
-    
-    # Days left contribution (max 0.3)
-    if days_left > 5:
-        score += 0.3
-    elif days_left > 2:
-        score += 0.2
-    elif days_left > 0:
-        score += 0.1
-    
-    # Attendance 7 days contribution (max 0.4)
-    if attendance_7 >= 4:
-        score += 0.4
-    elif attendance_7 >= 2:
-        score += 0.25
-    elif attendance_7 >= 1:
-        score += 0.1
-    
-    # Attendance 3 days contribution (max 0.3)
-    if attendance_3 >= 2:
-        score += 0.3
-    elif attendance_3 >= 1:
-        score += 0.15
-    
-    return min(score, 1.0)
-
-
-def get_churn_distribution():
-    """
-    Get distribution of members by churn risk level.
-    Returns: {'High': count, 'Medium': count, 'Low': count}
-    """
-    distribution = {'High': 0, 'Medium': 0, 'Low': 0}
-    
-    for member in Member.objects.all():
-        _, risk_level = predict_churn(member)
-        distribution[risk_level] += 1
-    
-    return distribution
-
-
-def get_high_churn_count():
-    """Count members with high churn risk"""
-    return get_churn_distribution()['High']
-
-
-# =============================================================================
-# RETURN VOLUME PREDICTION
-# =============================================================================
-
-def get_expected_returns_next_3_days():
-    """
-    Estimate expected returns in the next 3 days based on churn predictions.
-    
-    Expected Returns = (Likely Returners * 0.8) + (Maybe Returners * 0.4)
-    """
-    likely_returners = 0  # prob >= 0.7
-    maybe_returners = 0   # 0.4 <= prob < 0.7
-    unlikely_returners = 0  # prob < 0.4
-    
-    for member in Member.objects.all():
-        prob, _ = predict_churn(member)
-        if prob >= 0.7:
-            likely_returners += 1
-        elif prob >= 0.4:
-            maybe_returners += 1
-        else:
-            unlikely_returners += 1
-    
-    expected = (likely_returners * 0.8) + (maybe_returners * 0.4)
-    
-    return {
-        'likely_returners': likely_returners,
-        'maybe_returners': maybe_returners,
-        'unlikely_returners': unlikely_returners,
-        'expected_returns': round(expected, 1)
-    }
-
-
-# =============================================================================
-# AI INSIGHTS PROMPT BUILDERS
-# =============================================================================
-
-def build_dashboard_prompt():
-    """
-    Build AI prompt for dashboard insights.
-    """
-    today_checkins = get_today_checkins()
-    active_passes = get_active_passes_count()
-    expired_passes = get_expired_passes_count()
-    revenue_today = get_revenue_today()
-    peak_hour, peak_count = get_peak_hour()
-    peak_time = format_peak_hour(peak_hour)
-    expected_data = get_expected_returns_next_3_days()
-    popular_plan = get_most_popular_plan()
-    high_churn = get_high_churn_count()
-    
-    prompt = f"""Act as a gym business analyst. Based on this operational and predictive data, give 3 short insights and 2 actionable recommendations.
-
-OPERATIONAL DATA:
-- Today's Check-ins: {today_checkins}
-- Active Passes: {active_passes}
-- Expired Passes: {expired_passes}
-- Revenue Today: ₱{revenue_today}
-- Peak Time: {peak_time} ({peak_count} check-ins)
-
-PREDICTIVE DATA:
-- Expected Returns (Next 3 Days): {expected_data['expected_returns']}
-- Most Popular Plan: {popular_plan}
-- High Churn Risk Members: {high_churn}
-
-Provide insights in a concise, actionable format."""
-    
-    return prompt
-
-
-def build_member_prompt(member):
-    """
-    Build AI prompt for member-specific retention insights.
-    """
-    prob, risk_level = predict_churn(member)
-    days_left, attendance_7, attendance_3 = calculate_member_features(member)
-    
-    prompt = f"""Based on this member behavior data, give a short retention recommendation.
-
-MEMBER: {member.name}
-- Return Probability: {prob * 100:.0f}%
-- Churn Risk Level: {risk_level}
-- Days Left on Pass: {days_left}
-- Attendance (Last 7 Days): {attendance_7}
-- Attendance (Last 3 Days): {attendance_3}
-
-Provide a brief, personalized retention recommendation."""
-    
-    return prompt
-
-
-def generate_dashboard_insights():
-    """
-    Generate AI insights for the dashboard.
-    This is a placeholder that simulates AI response.
-    Hook-ready for future OpenAI integration.
-    """
-    today_checkins = get_today_checkins()
-    active_passes = get_active_passes_count()
-    high_churn = get_high_churn_count()
-    peak_hour, _ = get_peak_hour()
-    expected_data = get_expected_returns_next_3_days()
-    
-    insights = []
-    recommendations = []
-    
-    # Generate contextual insights
-    if today_checkins == 0:
-        insights.append("📊 No check-ins recorded today yet. Consider sending reminder notifications to members with active passes.")
-    elif today_checkins < 5:
-        insights.append(f"📊 Light traffic today with {today_checkins} check-ins. Good opportunity for equipment maintenance.")
-    else:
-        insights.append(f"📊 Strong engagement today with {today_checkins} check-ins!")
-    
-    if high_churn > 0:
-        insights.append(f"⚠️ {high_churn} member(s) show high churn risk. Consider proactive outreach.")
-    else:
-        insights.append("✅ No high-risk churn members currently. Retention efforts are working well.")
-    
-    if peak_hour is not None:
-        peak_time = format_peak_hour(peak_hour)
-        insights.append(f"⏰ Peak activity occurs at {peak_time}. Ensure adequate staffing during this time.")
-    
-    # Generate recommendations
-    if active_passes < 5:
-        recommendations.append("🎯 Run a promotional campaign to boost new pass sales.")
-    else:
-        recommendations.append("🎯 Maintain current marketing efforts. Pass sales are healthy.")
-    
-    if expected_data['maybe_returners'] > 0:
-        recommendations.append(f"📱 Send personalized messages to {expected_data['maybe_returners']} 'maybe' returners to encourage visits.")
-    else:
-        recommendations.append("📱 Focus retention efforts on building habits for new members.")
-    
-    return {
-        'insights': insights,
-        'recommendations': recommendations,
-        'prompt': build_dashboard_prompt()
-    }
-
-
-def generate_member_insights(member):
-    """
-    Generate AI insights for a specific member.
-    This is a placeholder that simulates AI response.
-    """
-    prob, risk_level = predict_churn(member)
-    days_left, attendance_7, attendance_3 = calculate_member_features(member)
-    
-    recommendation = ""
-    
-    if risk_level == 'High':
-        if attendance_7 == 0:
-            recommendation = "🚨 Member hasn't visited recently. Send a personalized 'We miss you' message with an incentive to return."
-        else:
-            recommendation = "⚠️ Engagement is declining. Consider offering a personal training session or class recommendation."
-    elif risk_level == 'Medium':
-        if days_left <= 2:
-            recommendation = "📅 Pass expiring soon. Reach out about renewal options before it expires."
-        else:
-            recommendation = "📊 Moderate engagement. Encourage more frequent visits to build a consistent habit."
-    else:  # Low risk
-        if attendance_7 >= 3:
-            recommendation = "⭐ Highly engaged member! Consider loyalty rewards or referral incentives."
-        else:
-            recommendation = "✅ Good standing. Continue providing excellent service to maintain satisfaction."
-    
-    return {
-        'recommendation': recommendation,
-        'prompt': build_member_prompt(member),
-        'return_probability': prob,
-        'risk_level': risk_level,
-        'days_left': days_left,
-        'attendance_7': attendance_7,
-        'attendance_3': attendance_3
-    }
+    return max(min(prob, 99), 1), risk

@@ -5,10 +5,7 @@
     <span class="material-icons me-1" style="font-size: 1rem;">edit</span>
     Edit
 </a>
-<a href="{% url 'passes_list' %}" class="btn btn-success">
-    <span class="material-icons me-1" style="font-size: 1rem;">sell</span>
-    Sell Pass
-</a>
+
 {% endblock %}
 
 {% block content %}
@@ -130,7 +127,8 @@
                         <thead>
                             <tr>
                                 <th>Date</th>
-                                <th>Time</th>
+                                <th>Time In</th>
+                                <th>Time Out</th>
                                 <th>Pass Used</th>
                             </tr>
                         </thead>
@@ -138,12 +136,19 @@
                             {% for attendance in attendances %}
                             <tr>
                                 <td>{{ attendance.checked_in_at|date:"M d, Y" }}</td>
-                                <td>{{ attendance.checked_in_at|time:"g:i A" }}</td>
+                                <td>{{ attendance.checked_in_at|time:"h:i A" }}</td>
+                                <td>
+                                    {% if attendance.checked_out_at %}
+                                        {{ attendance.checked_out_at|time:"h:i A" }}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
                                 <td>{{ attendance.membership_pass.membership_plan.name }}</td>
                             </tr>
                             {% empty %}
                             <tr>
-                                <td colspan="3" class="empty-state py-4">No attendance records yet</td>
+                                <td colspan="4" class="empty-state py-4">No attendance records yet</td>
                             </tr>
                             {% endfor %}
                         </tbody>

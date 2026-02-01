@@ -10,7 +10,14 @@
 {% block content %}
 <!-- Search -->
 <div class="mb-4">
-    {% include 'molecules/search_bar.html' with placeholder="Search members by name or phone..." name="q" value=query %}
+    <div class="search-bar">
+        <span class="material-icons">search</span>
+        <input type="text" 
+               id="memberSearchInput"
+               class="form-control" 
+               placeholder="Search members by name or phone..."
+               value="{{ query|default:'' }}">
+    </div>
 </div>
 
 <!-- Members Table -->
@@ -52,6 +59,15 @@
                         <td>{{ member.created_at|date:"M d, Y" }}</td>
                         <td>
                             <div class="btn-group btn-group-sm">
+                                <a href="{% url 'check_in_member' member.pk %}" class="btn btn-success" title="Time In">
+                                    <span class="material-icons" style="font-size: 1rem;">login</span>
+                                </a>
+                                <a href="{% url 'check_out_member' member.pk %}" class="btn btn-warning" title="Time Out" style="color: #000;">
+                                    <span class="material-icons" style="font-size: 1rem;">logout</span>
+                                </a>
+                                <button type="button" class="btn btn-info" onclick="openSellPassModal({{ member.pk }}, '{{ member.name|escapejs }}')" title="Give Pass" style="color: #000;">
+                                    <span class="material-icons" style="font-size: 1rem;">confirmation_number</span>
+                                </button>
                                 <a href="{% url 'member_detail' member.pk %}" class="btn btn-outline-light" title="View">
                                     <span class="material-icons" style="font-size: 1rem;">visibility</span>
                                 </a>
@@ -100,10 +116,117 @@
         </div>
     </div>
 </div>
+
+<!-- Sell Pass Modal -->
+<div class="modal fade" id="sellPassModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Give Pass to <span id="sellPassMemberName"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="sellPassMemberId">
+                <div class="mb-3">
+                    <label class="form-label">Select Plan</label>
+                    <div class="list-group">
+                        {% for plan in plans %}
+                        <button type="button" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" onclick="submitSellPass({{ plan.pk }})">
+                            <div>
+                                <div class="fw-bold">{{ plan.name }}</div>
+                                <small class="text-muted">{{ plan.duration_days }} days</small>
+                            </div>
+                            <span class="badge bg-primary rounded-pill">₱{{ plan.price }}</span>
+                        </button>
+                        {% empty %}
+                        <div class="text-center p-3 text-muted">
+                            No active plans available. <a href="{% url 'plans_list' %}">Create one</a>.
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
+// Member Duplicate Check
+const memberForm = document.getElementById('memberForm');
+if (memberForm) {
+    const nameInput = memberForm.querySelector('[name="name"]');
+    const phoneInput = memberForm.querySelector('[name="phone"]');
+    const saveBtn = document.getElementById('saveMemberBtn');
+    let duplicateTimeout = null;
+    
+    // State checking
+    let isNameDuplicate = false;
+    let isPhoneInvalid = false;
+    
+    function updateSaveButton() {
+        saveBtn.disabled = isNameDuplicate || isPhoneInvalid;
+    }
+    
+    // Name Warning Element
+    const nameWarningEl = document.createElement('div');
+    nameWarningEl.className = 'form-text text-danger d-none animate-in';
+    nameWarningEl.id = 'name-duplicate-warning';
+    nameWarningEl.innerHTML = '<span class="material-icons" style="font-size: 0.875rem; vertical-align: text-bottom;">warning</span> This name is already taken.';
+    nameInput.parentNode.appendChild(nameWarningEl);
+    
+    // Phone Warning Element
+    const phoneWarningEl = document.createElement('div');
+    phoneWarningEl.className = 'form-text text-danger d-none animate-in';
+    phoneWarningEl.id = 'phone-warning';
+    phoneWarningEl.innerHTML = '<span class="material-icons" style="font-size: 0.875rem; vertical-align: text-bottom;">warning</span> Phone number must be at least 11 digits.';
+    phoneInput.parentNode.appendChild(phoneWarningEl);
+
+    // Name Listener
+    nameInput.addEventListener('input', function() {
+        clearTimeout(duplicateTimeout);
+        nameWarningEl.classList.add('d-none');
+        isNameDuplicate = false;
+        updateSaveButton();
+        
+        const name = this.value.trim();
+        if (name.length > 2) {
+            duplicateTimeout = setTimeout(async () => {
+                try {
+                    const response = await fetch(`{% url 'check_duplicate_member' %}?name=${encodeURIComponent(name)}`);
+                    const result = await response.json();
+                    
+                    if (result.status === 'duplicate') {
+                        nameWarningEl.classList.remove('d-none');
+                        isNameDuplicate = true;
+                        updateSaveButton();
+                    }
+                } catch (e) {
+                    console.error('Error checking duplicate:', e);
+                }
+            }, 500);
+        }
+    });
+    
+    // Phone Listener
+    phoneInput.addEventListener('input', function() {
+        // Enforce numeric only
+        this.value = this.value.replace(/[^0-9]/g, '');
+        const val = this.value;
+        
+        if (val.length > 0 && val.length < 11) {
+            phoneWarningEl.classList.remove('d-none');
+            isPhoneInvalid = true;
+        } else {
+            phoneWarningEl.classList.add('d-none');
+            isPhoneInvalid = false;
+        }
+        updateSaveButton();
+    });
+}
+
+// Member creation logic
 document.getElementById('memberForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     const form = this;
@@ -141,6 +264,15 @@ document.getElementById('memberForm').addEventListener('submit', async function(
                 <td>${result.data.joined}</td>
                 <td>
                     <div class="btn-group btn-group-sm">
+                        <a href="/attendance/in/${result.data.pk}/" class="btn btn-success" title="Time In">
+                            <span class="material-icons" style="font-size: 1rem;">login</span>
+                        </a>
+                        <a href="/attendance/out/${result.data.pk}/" class="btn btn-warning" title="Time Out" style="color: #000;">
+                            <span class="material-icons" style="font-size: 1rem;">logout</span>
+                        </a>
+                        <button type="button" class="btn btn-info" onclick="openSellPassModal(${result.data.pk}, '${result.data.name}')" title="Give Pass" style="color: #000;">
+                            <span class="material-icons" style="font-size: 1rem;">confirmation_number</span>
+                        </button>
                         <a href="/members/${result.data.pk}/" class="btn btn-outline-light" title="View">
                             <span class="material-icons" style="font-size: 1rem;">visibility</span>
                         </a>
@@ -166,12 +298,184 @@ document.getElementById('memberForm').addEventListener('submit', async function(
             
             // Reset form
             form.reset();
+
+            // Show Credentials Modal
+            document.getElementById('newUsername').innerText = result.data.username;
+            document.getElementById('newPassword').innerText = result.data.password;
+            
+            const credentialsModal = new bootstrap.Modal(document.getElementById('credentialsModal'));
+            credentialsModal.show();
         }
     } catch (error) {
         errorsEl.innerText = error.message;
         errorsEl.classList.remove('d-none');
     }
 });
+
+// Sell Pass Logic
+const sellPassModal = new bootstrap.Modal(document.getElementById('sellPassModal'));
+
+function openSellPassModal(memberId, memberName) {
+    document.getElementById('sellPassMemberId').value = memberId;
+    document.getElementById('sellPassMemberName').innerText = memberName;
+    sellPassModal.show();
+}
+
+async function submitSellPass(planId) {
+    const memberId = document.getElementById('sellPassMemberId').value;
+    
+    try {
+        const result = await apiCall("{% url 'sell_pass' %}", 'POST', { 
+            member_id: memberId,
+            plan_id: planId 
+        });
+        
+        if (result.status === 'success') {
+            showNotification('Success', result.message, 'success');
+            sellPassModal.hide();
+            // Reload to update status badges
+            setTimeout(() => window.location.reload(), 1000);
+        }
+    } catch (error) {
+        showNotification('Error', error.message, 'error');
+    }
+}
 </script>
+<script>
+// Member Search Logic
+const searchInput = document.getElementById('memberSearchInput');
+let searchTimeout = null;
+
+if (searchInput) {
+    searchInput.addEventListener('input', function(e) {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            fetchMembers(e.target.value);
+        }, 300); // Debounce
+    });
+}
+
+async function fetchMembers(query) {
+    const tableBody = document.querySelector('.table tbody');
+    const countBadge = document.querySelector('.card-header .badge');
+    const tableContainer = document.querySelector('.table-responsive');
+    
+    // Show loading state
+    tableContainer.style.opacity = '0.5';
+    
+    try {
+        const response = await fetch(`{% url 'members_list' %}?q=${encodeURIComponent(query)}`, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (result.status === 'success') {
+            tableBody.innerHTML = '';
+            
+            // Update count
+            countBadge.innerText = result.data.length + (result.data.length === 50 ? '+' : '');
+            
+            if (result.data.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="empty-state">
+                            <span class="material-icons">people</span>
+                            <p class="mb-2">No members found matching "${query}"</p>
+                        </td>
+                    </tr>
+                `;
+            } else {
+                result.data.forEach(member => {
+                    const statusBadge = member.has_active_pass 
+                        ? `<span class="badge badge-active">Active</span>`
+                        : `<span class="badge badge-expired">No Pass</span>`;
+                        
+                    const row = `
+                        <tr class="animate-in">
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar me-3">${member.initial}</div>
+                                    <div>
+                                        <a href="/members/${member.pk}/">${member.name}</a>
+                                        <div class="small text-muted">${member.phone}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>${statusBadge}</td>
+                            <td>${member.joined}</td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="/attendance/in/${member.pk}/" class="btn btn-success" title="Time In">
+                                        <span class="material-icons" style="font-size: 1rem;">login</span>
+                                    </a>
+                                    <a href="/attendance/out/${member.pk}/" class="btn btn-warning" title="Time Out" style="color: #000;">
+                                        <span class="material-icons" style="font-size: 1rem;">logout</span>
+                                    </a>
+                                    <button type="button" class="btn btn-info" onclick="openSellPassModal(${member.pk}, '${member.name.replace(/'/g, "\\'")}')" title="Give Pass" style="color: #000;">
+                                        <span class="material-icons" style="font-size: 1rem;">confirmation_number</span>
+                                    </button>
+                                    <a href="/members/${member.pk}/" class="btn btn-outline-light" title="View">
+                                        <span class="material-icons" style="font-size: 1rem;">visibility</span>
+                                    </a>
+                                    <a href="/members/${member.pk}/edit/" class="btn btn-outline-light" title="Edit">
+                                        <span class="material-icons" style="font-size: 1rem;">edit</span>
+                                    </a>
+                                    <a href="/members/${member.pk}/delete/" class="btn btn-danger" title="Delete">
+                                        <span class="material-icons" style="font-size: 1rem;">delete</span>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                    tableBody.innerHTML += row;
+                });
+            }
+        }
+    } catch (error) {
+        console.error('Error searching members:', error);
+        showNotification('Error', 'Failed to search members', 'error');
+    } finally {
+        tableContainer.style.opacity = '1';
+    }
+}
+</script>
+
+<!-- Credentials Modal -->
+<div class="modal fade" id="credentialsModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-bottom-0 pb-0">
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center pt-0 pb-4">
+                <div class="mb-3">
+                    <span class="material-icons text-success" style="font-size: 4rem;">check_circle</span>
+                </div>
+                <h4 class="mb-2">Member Account Created!</h4>
+                <p class="text-muted mb-4">Please provide these login credentials to the member.</p>
+                
+                <div class="p-3 bg-secondary rounded mb-4 text-start">
+                    <div class="mb-3">
+                        <label class="small text-muted text-uppercase">Username</label>
+                        <div class="h5 mb-0 font-monospace text-white" id="newUsername"></div>
+                    </div>
+                    <div>
+                        <label class="small text-muted text-uppercase">Default Password</label>
+                        <div class="h5 mb-0 font-monospace text-white" id="newPassword"></div>
+                    </div>
+                </div>
+                
+                <p class="small text-muted mb-0">The member can change their password after logging in for the first time.</p>
+            </div>
+            <div class="modal-footer justify-content-center border-top-0 pt-0">
+                <button type="button" class="btn btn-primary px-4" data-bs-dismiss="modal">Done</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 

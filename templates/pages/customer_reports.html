@@ -1,0 +1,270 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header & Summary Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary bg-opacity-10 border-primary h-100">
+                <div class="card-body text-center">
+                    <span class="material-icons text-primary fs-1 mb-2">event_available</span>
+                    <h3 class="mb-0 fw-bold">{{ analytics.metrics.total_visits }}</h3>
+                    <p class="text-muted small mb-0">Total Life Visits</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success bg-opacity-10 border-success h-100">
+                <div class="card-body text-center">
+                    <span class="material-icons text-success fs-1 mb-2">local_fire_department</span>
+                    <h3 class="mb-0 fw-bold">{{ analytics.metrics.streak }}</h3>
+                    <p class="text-muted small mb-0">Current Streak (Days)</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning bg-opacity-10 border-warning h-100">
+                <div class="card-body text-center">
+                    <span class="material-icons text-warning fs-1 mb-2">calendar_month</span>
+                    <h3 class="mb-0 fw-bold">{{ analytics.metrics.monthly_visits }}</h3>
+                    <p class="text-muted small mb-0">Visits (Last 30 Days)</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info bg-opacity-10 border-info h-100">
+                <div class="card-body text-center d-flex flex-column justify-content-center">
+                    <h6 class="text-info fw-bold mb-2">AI CONCLUSION</h6>
+                    <p class="small mb-0">{{ analytics.conclusions.0 }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row 1: Activity -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-8">
+            <div class="card h-100 border-secondary bg-dark bg-opacity-25">
+                <div class="card-header border-secondary bg-transparent py-3">
+                    <h5 class="mb-0">Activity Over Time (Past 30 Days)</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="activityChart" style="min-height: 300px;"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card h-100 border-secondary bg-dark bg-opacity-25">
+                <div class="card-header border-secondary bg-transparent py-3">
+                    <h5 class="mb-0">Weekly Routine</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="routineChart" style="min-height: 300px;"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row 2: Peak Hours & Filter -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-4">
+            <div class="card h-100 border-secondary bg-dark bg-opacity-25">
+                <div class="card-header border-secondary bg-transparent py-3">
+                    <h5 class="mb-0">Peak Training Hours</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="peakHoursChart" style="min-height: 250px;"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-8">
+            <div class="card h-100 border-secondary bg-dark bg-opacity-25">
+                <div class="card-header border-secondary bg-transparent py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Attendance History</h5>
+                    <form method="get" class="d-flex gap-2">
+                        <input type="date" name="start_date" class="form-control form-control-sm bg-dark border-secondary text-light" value="{{ request.GET.start_date }}">
+                        <input type="date" name="end_date" class="form-control form-control-sm bg-dark border-secondary text-light" value="{{ request.GET.end_date }}">
+                        <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+                    </form>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive" style="max-height: 400px;">
+                        <table class="table table-hover table-dark border-secondary align-middle mb-0">
+                            <thead class="bg-secondary bg-opacity-10 text-muted small sticky-top">
+                                <tr>
+                                    <th class="py-3 px-4">Date</th>
+                                    <th class="py-3">Check-In</th>
+                                    <th class="py-3">Check-Out</th>
+                                    <th class="py-3">Duration</th>
+                                    <th class="py-3 px-4 text-end">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for record in attendances %}
+                                <tr>
+                                    <td class="px-4">{{ record.checked_in_at|date:"M d, Y" }}</td>
+                                    <td>{{ record.checked_in_at|date:"h:i A" }}</td>
+                                    <td>
+                                        {% if record.checked_out_at %}
+                                            {{ record.checked_out_at|date:"h:i A" }}
+                                        {% else %}
+                                            <span class="text-muted small">In Progress</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if record.checked_out_at %}
+                                            <span class="text-info">{{ record.checked_out_at|timeuntil:record.checked_in_at }}</span>
+                                        {% else %}
+                                            <span class="badge bg-success bg-opacity-10 text-success border border-success">Active</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-4 text-end">
+                                        {% if record.checked_out_at %}
+                                            <span class="badge bg-secondary opacity-50">Completed</span>
+                                        {% else %}
+                                            <span class="badge bg-success">Check-In</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-5">
+                                        <span class="material-icons text-muted mb-2" style="font-size: 3rem; opacity: 0.3;">history</span>
+                                        <p class="text-muted mb-0">No records found for the selected period.</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js Library -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    // Universal Styles for Charts
+    Chart.defaults.color = '#888888';
+    Chart.defaults.borderColor = '#2a2a2a';
+
+    // 1. Activity Over Time Chart (Line Chart)
+    const ctxActivity = document.getElementById('activityChart').getContext('2d');
+    new Chart(ctxActivity, {
+        type: 'line',
+        data: {
+            labels: [{% for item in analytics.history %}'{{ item.date }}',{% endfor %}],
+            datasets: [{
+                label: 'Daily Visits',
+                data: [{% for item in analytics.history %}{{ item.count }},{% endfor %}],
+                borderColor: '#0d6efd',
+                backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                fill: true,
+                tension: 0.4,
+                borderWidth: 3,
+                pointRadius: 4,
+                pointBackgroundColor: '#0d6efd'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { stepSize: 1, precision: 0 }
+                }
+            }
+        }
+    });
+
+    // 2. Weekly Routine Chart (Radar)
+    const ctxRoutine = document.getElementById('routineChart').getContext('2d');
+    new Chart(ctxRoutine, {
+        type: 'radar',
+        data: {
+            labels: [{% for label in analytics.routine.labels %}'{{ label }}',{% endfor %}],
+            datasets: [{
+                label: 'Visits per Weekday',
+                data: [{% for val in analytics.routine.data %}{{ val }},{% endfor %}],
+                backgroundColor: 'rgba(25, 135, 84, 0.2)',
+                borderColor: '#198754',
+                pointBackgroundColor: '#198754',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                r: {
+                    beginAtZero: true,
+                    grid: { color: '#2a2a2a' },
+                    angleLines: { color: '#2a2a2a' },
+                    ticks: { display: false, stepSize: 1 }
+                }
+            }
+        }
+    });
+
+    // 3. Peak Hours Chart (Bar)
+    const ctxPeak = document.getElementById('peakHoursChart').getContext('2d');
+    new Chart(ctxPeak, {
+        type: 'bar',
+        data: {
+            labels: [{% for item in analytics.peak_hours %}'{{ item.hour }}',{% endfor %}],
+            datasets: [{
+                label: 'Frequency',
+                data: [{% for item in analytics.peak_hours %}{{ item.count }},{% endfor %}],
+                backgroundColor: '#ffc107',
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { stepSize: 1 }
+                }
+            }
+        }
+    });
+</script>
+
+<style>
+    /* Custom spacing for reports fluid container */
+    .container-fluid {
+        max-width: 1400px;
+    }
+    
+    /* Table scrollbar styling */
+    .table-responsive::-webkit-scrollbar {
+        width: 8px;
+    }
+    .table-responsive::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .table-responsive::-webkit-scrollbar-thumb {
+        background: #2a2a2a;
+        border-radius: 10px;
+    }
+    .table-responsive::-webkit-scrollbar-thumb:hover {
+        background: #3a3a3a;
+    }
+</style>
+{% endblock %}
+

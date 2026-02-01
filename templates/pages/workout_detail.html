@@ -1,0 +1,337 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Static View (Overview) -->
+    <div id="overviewContainer">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-1">
+                        <li class="breadcrumb-item"><a href="{% url 'workout-library' %}" class="text-muted text-decoration-none">Library</a></li>
+                        <li class="breadcrumb-item active text-white" aria-current="page">{{ workout.name }}</li>
+                    </ol>
+                </nav>
+                <h2 class="fw-bold mb-0">{{ workout.name }}</h2>
+            </div>
+            <button id="startWorkoutBtn" class="btn btn-primary btn-lg px-5 shadow">
+                <span class="material-icons align-middle me-2">play_arrow</span>START WORKOUT
+            </button>
+        </div>
+
+        <div class="row g-4 mb-5">
+            <div class="col-md-8">
+                <div class="card bg-dark border-secondary h-100">
+                    <div class="card-body">
+                        <h5 class="text-muted text-uppercase small fw-bold mb-3">Description</h5>
+                        <p class="lead text-light">{{ workout.description }}</p>
+                        
+                        <div class="mt-4">
+                            <h5 class="text-muted text-uppercase small fw-bold mb-3">Target Muscles</h5>
+                            <div class="d-flex flex-wrap gap-2">
+                                {% for muscle in workout.target_muscles %}
+                                <span class="badge bg-secondary bg-opacity-25 text-light border border-secondary px-3 py-2">{{ muscle }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card bg-dark border-secondary h-100">
+                    <div class="card-body d-flex flex-column justify-content-between">
+                        <div>
+                            <div class="d-flex justify-content-between mb-3">
+                                <span class="text-muted">Difficulty</span>
+                                <span class="badge {% if workout.difficulty == 'beginner' %}bg-success{% elif workout.difficulty == 'intermediate' %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                                    {{ workout.get_difficulty_display }}
+                                </span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-3">
+                                <span class="text-muted">Goal</span>
+                                <span class="text-light fw-bold">{{ workout.get_goal_type_display }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted">Est. Duration</span>
+                                <span class="text-light fw-bold">{{ workout.duration_minutes }} mins</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Warmup Section -->
+        <div class="mb-5">
+            <h4 class="fw-bold mb-4 d-flex align-items-center">
+                <span class="material-icons text-warning me-2">wb_sunny</span>Warmup
+            </h4>
+            <div class="row g-3">
+                {% for exercise in workout.exercises.all %}
+                {% if exercise.is_warmup %}
+                <div class="col-md-6">
+                    <div class="card bg-dark border-secondary border-start border-4 border-warning">
+                        <div class="card-body d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-0 fw-bold">{{ exercise.name }}</h6>
+                                <small class="text-muted">{{ exercise.reps }}</small>
+                            </div>
+                            <span class="badge bg-warning bg-opacity-10 text-warning px-3">{{ exercise.sets }} Set{% if exercise.sets > 1 %}s{% endif %}</span>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Main Exercises Section -->
+        <div>
+            <h4 class="fw-bold mb-4 d-flex align-items-center">
+                <span class="material-icons text-primary me-2">fitness_center</span>Main Routine
+            </h4>
+            <div class="card bg-dark border-secondary overflow-hidden">
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover mb-0 align-middle">
+                        <thead class="bg-secondary bg-opacity-10">
+                            <tr>
+                                <th class="ps-4 py-3 text-muted small text-uppercase">Exercise</th>
+                                <th class="py-3 text-muted small text-uppercase">Sets</th>
+                                <th class="py-3 text-muted small text-uppercase">Reps/Duration</th>
+                                <th class="py-3 text-muted small text-uppercase">Rest</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for exercise in workout.exercises.all %}
+                            {% if not exercise.is_warmup %}
+                            <tr>
+                                <td class="ps-4 py-3">
+                                    <div class="fw-bold">{{ exercise.name }}</div>
+                                </td>
+                                <td>{{ exercise.sets }}</td>
+                                <td>{{ exercise.reps }}</td>
+                                <td><span class="text-muted">{{ exercise.rest_time_seconds }}s</span></td>
+                            </tr>
+                            {% endif %}
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center py-5 text-muted italic">No main routine exercises defined.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Live Workout Mode (Initially Hidden) -->
+    <div id="liveModeContainer" class="d-none">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <button id="exitLiveMode" class="btn btn-outline-danger btn-sm">EXIT SESSION</button>
+                    <div class="text-center">
+                        <span class="text-muted small text-uppercase fw-bold">Current Exercise</span>
+                        <h3 id="currentExName" class="fw-bold mb-0 text-white">---</h3>
+                    </div>
+                    <div class="text-end">
+                        <span id="progressText" class="badge bg-primary px-3">1 / 5</span>
+                    </div>
+                </div>
+
+                <!-- Exercise Card -->
+                <div class="card bg-dark border-primary mb-4 p-4 shadow-lg text-center">
+                    <div class="row py-4">
+                        <div class="col-6 border-end border-secondary">
+                            <span class="text-muted small text-uppercase">Sets Remaining</span>
+                            <h1 id="setsRemaining" class="display-3 fw-bold mb-0">3</h1>
+                        </div>
+                        <div class="col-6">
+                            <span class="text-muted small text-uppercase">Target</span>
+                            <h1 id="targetReps" class="display-4 fw-bold mb-0">12</h1>
+                        </div>
+                    </div>
+                    <button id="completeSetBtn" class="btn btn-primary btn-lg w-100 py-3 mt-4 fw-bold">COMPLETE SET</button>
+                </div>
+
+                <!-- Rest Timer Card (Shown during rest) -->
+                <div id="restTimerCard" class="card bg-primary bg-opacity-10 border-primary d-none mb-4 p-4 text-center">
+                    <h5 class="text-primary text-uppercase small fw-bold mb-2">Rest Period</h5>
+                    <div class="display-1 fw-bold text-white mb-3" id="timerDisplay">01:00</div>
+                    
+                    <div class="d-flex justify-content-center gap-2 mb-4">
+                        <button class="btn btn-outline-primary timer-adj" data-adj="-15">-15s</button>
+                        <button class="btn btn-outline-primary timer-adj" data-adj="+15">+15s</button>
+                    </div>
+                    
+                    <button id="skipRestBtn" class="btn btn-link text-primary text-decoration-none">Skip Rest</button>
+                </div>
+
+                <!-- Next Exercise Preview -->
+                <div id="nextExPreview" class="text-center text-muted">
+                    <small class="text-uppercase fw-bold">Next:</small>
+                    <span id="nextExName" class="ms-2 fw-bold">Pushups</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Completion Screen (Initially Hidden) -->
+    <div id="completionContainer" class="d-none text-center py-5">
+        <span class="material-icons text-success display-1 mb-4">check_circle</span>
+        <h1 class="display-4 fw-bold text-white mb-2">WORKOUT COMPLETE!</h1>
+        <p class="lead text-muted mb-5">You smashed "{{ workout.name }}". Great job today!</p>
+        <a href="{% url 'workout-library' %}" class="btn btn-primary btn-lg px-5">Back to Library</a>
+    </div>
+</div>
+
+<script>
+    const exercises = [
+        {% for ex in workout.exercises.all %}
+        {
+            name: "{{ ex.name|escapejs }}",
+            sets: {{ ex.sets }},
+            reps: "{{ ex.reps|escapejs }}",
+            rest: {{ ex.rest_time_seconds }},
+            isWarmup: {% if ex.is_warmup %}true{% else %}false{% endif %}
+        },
+        {% endfor %}
+    ];
+
+    let currentExIndex = 0;
+    let currentSet = 1;
+    let timerInterval = null;
+    let secondsLeft = 0;
+
+    const overview = document.getElementById('overviewContainer');
+    const liveMode = document.getElementById('liveModeContainer');
+    const completion = document.getElementById('completionContainer');
+    const startBtn = document.getElementById('startWorkoutBtn');
+    const exitBtn = document.getElementById('exitLiveMode');
+    const completeSetBtn = document.getElementById('completeSetBtn');
+    const restCard = document.getElementById('restTimerCard');
+    const skipRestBtn = document.getElementById('skipRestBtn');
+    const timerDisplay = document.getElementById('timerDisplay');
+    const compSets = document.getElementById('setsRemaining');
+    const targetReps = document.getElementById('targetReps');
+    const currentExTitle = document.getElementById('currentExName');
+    const progressBadge = document.getElementById('progressText');
+    const nextPreview = document.getElementById('nextExPreview');
+
+    function formatTime(s) {
+        let mins = Math.floor(s / 60);
+        let secs = s % 60;
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    function updateWorkoutUI() {
+        if (currentExIndex >= exercises.length) {
+            liveMode.classList.add('d-none');
+            completion.classList.remove('d-none');
+            return;
+        }
+
+        const ex = exercises[currentExIndex];
+        currentExTitle.innerText = ex.name + (ex.isWarmup ? ' (Warmup)' : '');
+        compSets.innerText = (ex.sets - currentSet + 1);
+        targetReps.innerText = ex.reps;
+        progressBadge.innerText = `${currentExIndex + 1} / ${exercises.length}`;
+
+        if (currentExIndex + 1 < exercises.length) {
+            nextPreview.classList.remove('d-none');
+            document.getElementById('nextExName').innerText = exercises[currentExIndex + 1].name;
+        } else {
+            nextPreview.classList.add('d-none');
+        }
+
+        restCard.classList.add('d-none');
+        completeSetBtn.disabled = false;
+        completeSetBtn.innerText = "COMPLETE SET";
+    }
+
+    function startRest() {
+        const ex = exercises[currentExIndex];
+        if (currentSet >= ex.sets && currentExIndex + 1 >= exercises.length) {
+            nextExercise();
+            return;
+        }
+
+        secondsLeft = ex.rest;
+        if (secondsLeft <= 0) {
+            nextExercise();
+            return;
+        }
+
+        restCard.classList.remove('d-none');
+        completeSetBtn.disabled = true;
+        completeSetBtn.innerText = "RESTING...";
+        
+        timerDisplay.innerText = formatTime(secondsLeft);
+        
+        clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+            secondsLeft--;
+            timerDisplay.innerText = formatTime(secondsLeft);
+            if (secondsLeft <= 0) {
+                clearInterval(timerInterval);
+                nextExercise();
+            }
+        }, 1000);
+    }
+
+    function nextExercise() {
+        const ex = exercises[currentExIndex];
+        clearInterval(timerInterval);
+        restCard.classList.add('d-none');
+        completeSetBtn.disabled = false;
+        completeSetBtn.innerText = "COMPLETE SET";
+
+        if (currentSet < ex.sets) {
+            currentSet++;
+        } else {
+            currentExIndex++;
+            currentSet = 1;
+        }
+        updateWorkoutUI();
+    }
+
+    startBtn.addEventListener('click', () => {
+        overview.classList.add('d-none');
+        liveMode.classList.remove('d-none');
+        updateWorkoutUI();
+    });
+
+    exitBtn.addEventListener('click', () => {
+        if (confirm('Are you sure you want to end this session?')) {
+            location.reload();
+        }
+    });
+
+    completeSetBtn.addEventListener('click', () => {
+        startRest();
+    });
+
+    skipRestBtn.addEventListener('click', () => {
+        nextExercise();
+    });
+
+    document.querySelectorAll('.timer-adj').forEach(btn => {
+        btn.addEventListener('click', () => {
+            let adj = parseInt(btn.dataset.adj);
+            secondsLeft += adj;
+            if (secondsLeft < 0) secondsLeft = 0;
+            timerDisplay.innerText = formatTime(secondsLeft);
+        });
+    });
+</script>
+
+<style>
+    .breadcrumb-item + .breadcrumb-item::before {
+        color: rgba(255,255,255,0.3);
+    }
+    .card {
+        transition: transform 0.2s;
+    }
+</style>
+{% endblock %}

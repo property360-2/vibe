@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+
+{% block page_actions %}
+<div class="d-flex align-items-center justify-content-end gap-3">
+    <div class="text-end">
+        <p class="mb-0 text-muted">Welcome back,</p>
+        <h5 class="mb-0">{{ member.name }}</h5>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Membership Status -->
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header">Membership Status</div>
+            <div class="card-body text-center d-flex flex-column justify-content-center">
+                {% if active_pass %}
+                    <div class="mb-3">
+                        <span class="material-icons text-success" style="font-size: 4rem;">check_circle</span>
+                    </div>
+                    <h4>Active Plan</h4>
+                    <p class="text-muted">{{ active_pass.membership_plan.name }}</p>
+                    <div class="display-4 fw-bold mb-2">{{ days_left }}</div>
+                    <p class="text-muted text-uppercase small">Days Remaining</p>
+                    <p class="small text-muted">Expires on {{ active_pass.end_date|date:"M d, Y" }}</p>
+                {% else %}
+                    <div class="mb-3">
+                        <span class="material-icons text-danger" style="font-size: 4rem;">error</span>
+                    </div>
+                    <h4>No Active Plan</h4>
+                    <p class="text-muted mb-4">Your membership has expired or you haven't purchased one yet.</p>
+
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Attendance History -->
+    <div class="col-md-8">
+        <div class="card h-100">
+            <div class="card-header">Recent Attendance</div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Time In</th>
+                                <th>Time Out</th>
+                                <th>Duration</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for record in attendances %}
+                            <tr>
+                                <td>{{ record.checked_in_at|date:"M d, Y" }}</td>
+                                <td>{{ record.checked_in_at|date:"h:i A" }}</td>
+                                <td>
+                                    {% if record.checked_out_at %}
+                                        {{ record.checked_out_at|date:"h:i A" }}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if record.checked_out_at %}
+                                        {{ record.checked_out_at|timeuntil:record.checked_in_at }}
+                                    {% else %}
+                                        <span class="badge bg-success">Active</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center py-4 text-muted">No attendance records found</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

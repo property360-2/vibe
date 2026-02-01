@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils import timezone
+from django.contrib.auth.models import User
 from datetime import timedelta
 
 
@@ -22,6 +23,7 @@ class Member(models.Model):
     """Gym members who purchase walk-in passes"""
     name = models.CharField(max_length=200)
     phone = models.CharField(max_length=20, blank=True, null=True)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -104,6 +106,7 @@ class Attendance(models.Model):
     member = models.ForeignKey(Member, on_delete=models.CASCADE, related_name='attendances')
     membership_pass = models.ForeignKey(MembershipPass, on_delete=models.CASCADE, related_name='attendances')
     checked_in_at = models.DateTimeField(auto_now_add=True)
+    checked_out_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ['-checked_in_at']
@@ -111,3 +114,129 @@ class Attendance(models.Model):
 
     def __str__(self):
         return f"{self.member.name} - {self.checked_in_at.strftime('%Y-%m-%d %H:%M')}"
+
+
+class CustomerProfile(models.Model):
+    """Stores personalization data for the fitness assistant"""
+    EXPERIENCE_CHOICES = [
+        ('beginner', 'Beginner'),
+        ('intermediate', 'Intermediate'),
+        ('advanced', 'Advanced'),
+    ]
+    TRAINING_DAYS_CHOICES = [
+        (1, '1 Day'),
+        (2, '2 Days'),
+        (3, '3 Days'),
+        (4, '4 Days'),
+        (5, '5 Days'),
+        (6, '6 Days'),
+    ]
+    GOAL_CHOICES = [
+        ('muscle_gain', 'Muscle Gain'),
+        ('fat_loss', 'Fat Loss'),
+        ('strength', 'Strength'),
+        ('endurance', 'Endurance'),
+        ('general', 'General Fitness'),
+    ]
+    GENDER_CHOICES = [
+        ('male', 'Male'),
+        ('female', 'Female'),
+    ]
+
+    member = models.OneToOneField(Member, on_delete=models.CASCADE, related_name='profile')
+    age = models.PositiveIntegerField()
+    gender = models.CharField(max_length=10, choices=GENDER_CHOICES, default='male')
+    experience = models.CharField(max_length=20, choices=EXPERIENCE_CHOICES)
+    training_days = models.IntegerField(choices=TRAINING_DAYS_CHOICES)
+    primary_goal = models.CharField(max_length=20, choices=GOAL_CHOICES)
+    savage_mode = models.BooleanField(default=False)
+
+    weekly_schedule = models.JSONField(default=dict, blank=True)
+    height_cm = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    weight_kg = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.member.name}'s Profile"
+
+
+class Workout(models.Model):
+    """Hardcoded workout library entries"""
+    DIFFICULTY_CHOICES = [
+        ('beginner', 'Beginner'),
+        ('intermediate', 'Intermediate'),
+        ('advanced', 'Advanced'),
+    ]
+    GOAL_CHOICES = [
+        ('muscle_gain', 'Muscle Gain'),
+        ('fat_loss', 'Fat Loss'),
+        ('strength', 'Strength'),
+        ('endurance', 'Endurance'),
+        ('general', 'General Fitness'),
+    ]
+
+    name = models.CharField(max_length=200)
+    description = models.TextField()
+    difficulty = models.CharField(max_length=20, choices=DIFFICULTY_CHOICES)
+    target_muscles = models.JSONField(default=list)  # e.g., ["Chest", "Triceps"]
+    goal_type = models.CharField(max_length=20, choices=GOAL_CHOICES)
+    duration_minutes = models.PositiveIntegerField(default=45)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.name} ({self.difficulty})"
+
+
+class WorkoutExercise(models.Model):
+    """Exercises within a workout"""
+    workout = models.ForeignKey(Workout, on_delete=models.CASCADE, related_name='exercises')
+    name = models.CharField(max_length=200)
+    sets = models.PositiveIntegerField()
+    reps = models.CharField(max_length=50)  # e.g., "8-12", "30 sec"
+    is_warmup = models.BooleanField(default=False)
+    rest_time_seconds = models.PositiveIntegerField(default=60)
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['order']
+
+    def __str__(self):
+        return f"{self.name} ({self.workout.name})"
+
+
+class Achievement(models.Model):
+    """Unlockable achievements"""
+    CATEGORY_CHOICES = [
+        ('consistency', 'Consistency / Attendance'),
+        ('muscle', 'Muscle-Specific'),
+        ('savage', 'Savage / Failure'),
+        ('discipline', 'Discipline / Mindset'),
+        ('fun', 'Fun / Flex'),
+    ]
+
+    name = models.CharField(max_length=100)
+    description = models.TextField()
+    icon = models.CharField(max_length=10)  # Emoji or icon class
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='fun')
+    is_hidden = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
+
+class CustomerAchievement(models.Model):
+    """Track unlocked achievements for members"""
+    member = models.ForeignKey(Member, on_delete=models.CASCADE, related_name='achievements')
+    achievement = models.ForeignKey(Achievement, on_delete=models.CASCADE)
+    unlocked_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ['member', 'achievement']
+        ordering = ['-unlocked_at']
+
+    def __str__(self):
+        return f"{self.member.name} - {self.achievement.name}"

@@ -609,6 +609,34 @@
             
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto ms-4">
+                    {% if user.member %}
+                    <!-- Customer Navigation -->
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'customer_dashboard' %}active{% endif %}" href="{% url 'customer_dashboard' %}">
+                            <span class="material-icons">dashboard</span>
+                            My Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'customer_transactions' %}active{% endif %}" href="{% url 'customer_transactions' %}">
+                            <span class="material-icons">receipt_long</span>
+                            My Transactions
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'customer_reports' %}active{% endif %}" href="{% url 'customer_reports' %}">
+                            <span class="material-icons">summarize</span>
+                            My Reports
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if 'my-workouts' in request.path %}active{% endif %}" href="{% url 'workout_library' %}">
+                            <span class="material-icons">fitness_center</span>
+                            Workouts
+                        </a>
+                    </li>
+                    {% else %}
+                    <!-- Staff/Admin Navigation -->
                     <li class="nav-item">
                         <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}">
                             <span class="material-icons">dashboard</span>
@@ -627,24 +655,15 @@
                             Plans
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if 'passes' in request.path %}active{% endif %}" href="{% url 'passes_list' %}">
-                            <span class="material-icons">confirmation_number</span>
-                            Passes
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if 'attendance' in request.path %}active{% endif %}" href="{% url 'attendance_list' %}">
-                            <span class="material-icons">fact_check</span>
-                            Attendance
-                        </a>
-                    </li>
+
+
                     <li class="nav-item">
                         <a class="nav-link {% if 'reports' in request.path %}active{% endif %}" href="{% url 'reports' %}">
                             <span class="material-icons">analytics</span>
                             Reports
                         </a>
                     </li>
+                    {% endif %}
                 </ul>
                 
                 <!-- User Menu -->
@@ -654,15 +673,25 @@
                         {{ user.username|default:"Admin" }}
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
+                        {% if user.member %}
                         <li>
-                            <a class="dropdown-item" href="{% url 'admin:index' %}" target="_blank">
-                                <span class="material-icons">admin_panel_settings</span>
-                                Admin Panel
+                            <a class="dropdown-item" href="{% url 'customer_personalization' %}">
+                                <span class="material-icons">accessibility_new</span>
+                                My Personalization
                             </a>
                         </li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'change_password' %}">
+                                <span class="material-icons">lock_reset</span>
+                                Change Password
+                            </a>
+                        </li>
+                        {% endif %}
+
                         <li><hr class="dropdown-divider"></li>
                         <li>
-                            <a class="dropdown-item" href="{% url 'logout' %}">
+                            <form action="{% url 'logout' %}" method="post" id="logout-form" style="display: none;">{% csrf_token %}</form>
+                            <a class="dropdown-item" href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
                                 <span class="material-icons">logout</span>
                                 Logout
                             </a>

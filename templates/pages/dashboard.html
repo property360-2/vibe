@@ -74,44 +74,5 @@
     </div>
 </div>
 
-<!-- Quick Actions -->
-<div class="row g-3">
-    <div class="col-md-6">
-        <div class="card animate-in animate-delay-1">
-            <div class="card-header">Quick Actions</div>
-            <div class="card-body">
-                <div class="d-grid gap-2">
-                    <a href="{% url 'passes_list' %}" class="btn btn-success">
-                        <span class="material-icons me-2" style="font-size: 1rem;">sell</span>
-                        Sell New Pass
-                    </a>
-                    <a href="{% url 'attendance_list' %}" class="btn btn-primary">
-                        <span class="material-icons me-2" style="font-size: 1rem;">how_to_reg</span>
-                        Check In Member
-                    </a>
-                    <a href="{% url 'members_list' %}" class="btn btn-outline-light">
-                        <span class="material-icons me-2" style="font-size: 1rem;">person_add</span>
-                        Add New Member
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-6">
-        <div class="card animate-in animate-delay-2">
-            <div class="card-header">Navigation</div>
-            <div class="card-body p-0">
-                <a href="{% url 'plans_list' %}" class="d-flex justify-content-between align-items-center p-3 border-bottom" style="border-color: var(--border-color) !important;">
-                    <span><span class="material-icons me-2 text-muted" style="font-size: 1rem; vertical-align: middle;">card_membership</span>Manage Plans</span>
-                    <span class="material-icons text-muted">chevron_right</span>
-                </a>
-                <a href="{% url 'reports' %}" class="d-flex justify-content-between align-items-center p-3">
-                    <span><span class="material-icons me-2 text-muted" style="font-size: 1rem; vertical-align: middle;">analytics</span>View Reports</span>
-                    <span class="material-icons text-muted">chevron_right</span>
-                </a>
-            </div>
-        </div>
-    </div>
-</div>
+
 {% endblock %}
