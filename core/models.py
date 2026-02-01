@@ -240,3 +240,16 @@ class CustomerAchievement(models.Model):
 
     def __str__(self):
         return f"{self.member.name} - {self.achievement.name}"
+
+
+class WorkoutLog(models.Model):
+    """Track completed workout sessions"""
+    member = models.ForeignKey(Member, on_delete=models.CASCADE, related_name='workout_logs')
+    workout = models.ForeignKey(Workout, on_delete=models.SET_NULL, null=True)
+    completed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-completed_at']
+
+    def __str__(self):
+        return f"{self.member.name} - {self.workout.name if self.workout else 'Deleted Workout'} - {self.completed_at}"

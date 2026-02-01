@@ -36,6 +36,7 @@ urlpatterns = [
     path('my-personalization/', views.customer_personalization, name='customer_personalization'),
     path('my-workouts/', views.workout_library, name='workout_library'),
     path('my-workouts/<int:pk>/', views.workout_detail, name='workout_detail'),
+    path('my-workouts/<int:pk>/complete/', views.log_workout_completion, name='log_workout_completion'),
     path('attendance/in/<int:pk>/', views.check_in_member, name='check_in_member'),
     path('attendance/out/<int:pk>/', views.check_out_member, name='check_out_member'),
     path('my-dashboard/password/', views.change_password, name='change_password'),

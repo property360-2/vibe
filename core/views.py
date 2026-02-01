@@ -11,7 +11,7 @@ from django.core.paginator import Paginator
 import random
 import json
 
-from .models import MembershipPlan, Member, MembershipPass, Attendance, CustomerProfile, Workout, Achievement, CustomerAchievement
+from .models import MembershipPlan, Member, MembershipPass, Attendance, CustomerProfile, Workout, Achievement, CustomerAchievement, WorkoutLog
 from .forms import MembershipPlanForm, MemberForm, SellPassForm, CheckInForm
 from . import services
 
@@ -949,3 +949,23 @@ def workout_detail(request, pk):
         'page_title': workout.name
     }
     return render(request, 'pages/workout_detail.html', context)
+
+
+@login_required
+def log_workout_completion(request, pk):
+    """Log a completed workout for a member"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
+        
+    member = getattr(request.user, 'member', None)
+    if not member:
+        return JsonResponse({'error': 'Member not found'}, status=404)
+        
+    workout = get_object_or_404(Workout, pk=pk)
+    
+    WorkoutLog.objects.create(
+        member=member,
+        workout=workout
+    )
+    
+    return JsonResponse({'status': 'success', 'message': f'Workout "{workout.name}" logged!'})

@@ -8,7 +8,7 @@
             <div>
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb mb-1">
-                        <li class="breadcrumb-item"><a href="{% url 'workout-library' %}" class="text-muted text-decoration-none">Library</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'workout_library' %}" class="text-muted text-decoration-none">Library</a></li>
                         <li class="breadcrumb-item active text-white" aria-current="page">{{ workout.name }}</li>
                     </ol>
                 </nav>
@@ -182,7 +182,7 @@
         <span class="material-icons text-success display-1 mb-4">check_circle</span>
         <h1 class="display-4 fw-bold text-white mb-2">WORKOUT COMPLETE!</h1>
         <p class="lead text-muted mb-5">You smashed "{{ workout.name }}". Great job today!</p>
-        <a href="{% url 'workout-library' %}" class="btn btn-primary btn-lg px-5">Back to Library</a>
+        <a href="{% url 'workout_library' %}" class="btn btn-primary btn-lg px-5">Back to Library</a>
     </div>
 </div>
 
@@ -229,6 +229,20 @@
         if (currentExIndex >= exercises.length) {
             liveMode.classList.add('d-none');
             completion.classList.remove('d-none');
+            
+            // Log completion to backend
+            fetch("{% url 'log_workout_completion' workout.pk %}", {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            }).then(response => response.json())
+              .then(data => {
+                  if (data.status === 'success') {
+                      showNotification('Workout Logged', data.message, 'success');
+                  }
+              });
             return;
         }
 

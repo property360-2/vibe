@@ -3,7 +3,7 @@ from django.utils import timezone
 from datetime import timedelta
 from django.db.models import Count, Q
 from django.db.models.functions import ExtractWeekDay, ExtractHour
-from .models import Workout, Attendance
+from .models import Workout, Attendance, WorkoutLog
 
 class FitnessService:
     @staticmethod
@@ -242,6 +242,29 @@ class FitnessService:
         if not conclusions:
             conclusions.append("Every visit is a victory. Keep showing up!")
 
+        # 6. Workout History & Muscle Distribution
+        workout_logs = member.workout_logs.select_related('workout').all()
+        
+        # Muscle Distribution (Donut Chart)
+        muscle_counts = {}
+        for log in workout_logs:
+            if log.workout:
+                for muscle in log.workout.target_muscles:
+                    muscle_counts[muscle] = muscle_counts.get(muscle, 0) + 1
+        
+        muscle_labels = list(muscle_counts.keys())
+        muscle_data = list(muscle_counts.values())
+
+        # Workout Consistency (Last 7 Days)
+        workout_history = []
+        for i in range(6, -1, -1):
+            date = (now - timedelta(days=i)).date()
+            count = workout_logs.filter(completed_at__date=date).count()
+            workout_history.append({
+                'date': date.strftime('%a'),
+                'count': count
+            })
+
         return {
             'history': history,
             'routine': {
@@ -253,8 +276,15 @@ class FitnessService:
                 'total_visits': attendances.count(),
                 'streak': streak,
                 'monthly_visits': attendances.filter(checked_in_at__gte=thirty_days_ago).count(),
+                'total_workouts': workout_logs.count(),
             },
-            'conclusions': conclusions
+            'conclusions': conclusions,
+            'workouts': {
+                'muscle_labels': muscle_labels,
+                'muscle_data': muscle_data,
+                'history': workout_history,
+                'recent': workout_logs[:5]
+            }
         }
 
 

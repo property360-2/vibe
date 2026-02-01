@@ -25,9 +25,9 @@
         <div class="col-md-3">
             <div class="card bg-warning bg-opacity-10 border-warning h-100">
                 <div class="card-body text-center">
-                    <span class="material-icons text-warning fs-1 mb-2">calendar_month</span>
-                    <h3 class="mb-0 fw-bold">{{ analytics.metrics.monthly_visits }}</h3>
-                    <p class="text-muted small mb-0">Visits (Last 30 Days)</p>
+                    <span class="material-icons text-warning fs-1 mb-2">fitness_center</span>
+                    <h3 class="mb-0 fw-bold">{{ analytics.metrics.total_workouts }}</h3>
+                    <p class="text-muted small mb-0">Workouts Smashed</p>
                 </div>
             </div>
         </div>
@@ -41,96 +41,197 @@
         </div>
     </div>
 
-    <!-- Charts Row 1: Activity -->
-    <div class="row g-4 mb-4">
-        <div class="col-lg-8">
-            <div class="card h-100 border-secondary bg-dark bg-opacity-25">
-                <div class="card-header border-secondary bg-transparent py-3">
-                    <h5 class="mb-0">Activity Over Time (Past 30 Days)</h5>
-                </div>
-                <div class="card-body">
-                    <canvas id="activityChart" style="min-height: 300px;"></canvas>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-4">
-            <div class="card h-100 border-secondary bg-dark bg-opacity-25">
-                <div class="card-header border-secondary bg-transparent py-3">
-                    <h5 class="mb-0">Weekly Routine</h5>
-                </div>
-                <div class="card-body">
-                    <canvas id="routineChart" style="min-height: 300px;"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
+    <!-- Navigation Tabs -->
+    <ul class="nav nav-pills mb-4 bg-dark bg-opacity-50 p-2 rounded-3 border border-secondary d-inline-flex">
+        <li class="nav-item">
+            <a class="nav-link active py-2 px-4 d-flex align-items-center gap-2" data-bs-toggle="pill" href="#attendancePane">
+                <span class="material-icons fs-5">history</span> Attendance
+            </a>
+        </li>
+        <li class="nav-item ms-2">
+            <a class="nav-link py-2 px-4 d-flex align-items-center gap-2" data-bs-toggle="pill" href="#workoutPane">
+                <span class="material-icons fs-5">monitoring</span> Workout Stats
+            </a>
+        </li>
+    </ul>
 
-    <!-- Charts Row 2: Peak Hours & Filter -->
-    <div class="row g-4 mb-4">
-        <div class="col-lg-4">
-            <div class="card h-100 border-secondary bg-dark bg-opacity-25">
-                <div class="card-header border-secondary bg-transparent py-3">
-                    <h5 class="mb-0">Peak Training Hours</h5>
+    <div class="tab-content mt-2">
+        <!-- Attendance Tab Pane -->
+        <div class="tab-pane fade show active" id="attendancePane">
+            <!-- Attendance Charts -->
+            <div class="row g-4 mb-4">
+                <div class="col-lg-8">
+                    <div class="card h-100 border-secondary bg-dark bg-opacity-25">
+                        <div class="card-header border-secondary bg-transparent py-3">
+                            <h5 class="mb-0">Activity Over Time (Past 30 Days)</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="activityChart" style="min-height: 300px;"></canvas>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <canvas id="peakHoursChart" style="min-height: 250px;"></canvas>
+                <div class="col-lg-4">
+                    <div class="card h-100 border-secondary bg-dark bg-opacity-25">
+                        <div class="card-header border-secondary bg-transparent py-3">
+                            <h5 class="mb-0">Weekly Routine</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="routineChart" style="min-height: 300px;"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4 mb-4">
+                <div class="col-lg-4">
+                    <div class="card h-100 border-secondary bg-dark bg-opacity-25">
+                        <div class="card-header border-secondary bg-transparent py-3">
+                            <h5 class="mb-0">Peak Training Hours</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="peakHoursChart" style="min-height: 250px;"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-8">
+                    <div class="card h-100 border-secondary bg-dark bg-opacity-25">
+                        <div class="card-header border-secondary bg-transparent py-3 d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Attendance History</h5>
+                            <form method="get" class="d-flex gap-2">
+                                <input type="date" name="start_date" class="form-control form-control-sm bg-dark border-secondary text-light" value="{{ request.GET.start_date }}">
+                                <input type="date" name="end_date" class="form-control form-control-sm bg-dark border-secondary text-light" value="{{ request.GET.end_date }}">
+                                <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+                            </form>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive" style="max-height: 400px;">
+                                <table class="table table-hover table-dark border-secondary align-middle mb-0">
+                                    <thead class="bg-secondary bg-opacity-10 text-muted small sticky-top">
+                                        <tr>
+                                            <th class="py-3 px-4">Date</th>
+                                            <th class="py-3">Check-In</th>
+                                            <th class="py-3">Check-Out</th>
+                                            <th class="py-3">Duration</th>
+                                            <th class="py-3 px-4 text-end">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for record in attendances %}
+                                        <tr>
+                                            <td class="px-4">{{ record.checked_in_at|date:"M d, Y" }}</td>
+                                            <td>{{ record.checked_in_at|date:"h:i A" }}</td>
+                                            <td>
+                                                {% if record.checked_out_at %}
+                                                    {{ record.checked_out_at|date:"h:i A" }}
+                                                {% else %}
+                                                    <span class="text-muted small">In Progress</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if record.checked_out_at %}
+                                                    <span class="text-info">{{ record.checked_out_at|timeuntil:record.checked_in_at }}</span>
+                                                {% else %}
+                                                    <span class="badge bg-success bg-opacity-10 text-success border border-success">Active</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="px-4 text-end">
+                                                {% if record.checked_out_at %}
+                                                    <span class="badge bg-secondary opacity-50">Completed</span>
+                                                {% else %}
+                                                    <span class="badge bg-success">Check-In</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% empty %}
+                                        <tr>
+                                            <td colspan="5" class="text-center py-5">
+                                                <span class="material-icons text-muted mb-2" style="font-size: 3rem; opacity: 0.3;">history</span>
+                                                <p class="text-muted mb-0">No records found for the selected period.</p>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="col-lg-8">
-            <div class="card h-100 border-secondary bg-dark bg-opacity-25">
-                <div class="card-header border-secondary bg-transparent py-3 d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Attendance History</h5>
-                    <form method="get" class="d-flex gap-2">
-                        <input type="date" name="start_date" class="form-control form-control-sm bg-dark border-secondary text-light" value="{{ request.GET.start_date }}">
-                        <input type="date" name="end_date" class="form-control form-control-sm bg-dark border-secondary text-light" value="{{ request.GET.end_date }}">
-                        <button type="submit" class="btn btn-primary btn-sm">Filter</button>
-                    </form>
+
+        <!-- Workout Tab Pane -->
+        <div class="tab-pane fade" id="workoutPane">
+            <div class="row g-4 mb-4">
+                <!-- Muscle Distribution -->
+                <div class="col-lg-5">
+                    <div class="card h-100 border-secondary bg-dark bg-opacity-25">
+                        <div class="card-header border-secondary bg-transparent py-3">
+                            <h5 class="mb-0">Muscle Groups Trained</h5>
+                            <small class="text-muted">Breakdown by target muscle</small>
+                        </div>
+                        <div class="card-body d-flex align-items-center justify-content-center">
+                            {% if analytics.workouts.muscle_data %}
+                                <canvas id="muscleDistributionChart" style="max-height: 350px;"></canvas>
+                            {% else %}
+                                <div class="text-center py-5 opacity-25">
+                                    <span class="material-icons fs-1">pie_chart</span>
+                                    <p class="mb-0">No workout data yet</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Frequency Chart -->
+                <div class="col-lg-7">
+                    <div class="card h-100 border-secondary bg-dark bg-opacity-25">
+                        <div class="card-header border-secondary bg-transparent py-3">
+                            <h5 class="mb-0">Workout Consistency (Last 7 Days)</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="workoutFrequencyChart" style="min-height: 300px;"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Workouts Table -->
+            <div class="card border-secondary bg-dark bg-opacity-25">
+                <div class="card-header border-secondary bg-transparent py-3">
+                    <h5 class="mb-0">Recent Completed Sessions</h5>
                 </div>
                 <div class="card-body p-0">
-                    <div class="table-responsive" style="max-height: 400px;">
-                        <table class="table table-hover table-dark border-secondary align-middle mb-0">
-                            <thead class="bg-secondary bg-opacity-10 text-muted small sticky-top">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-dark mb-0">
+                            <thead class="bg-secondary bg-opacity-10 text-muted small">
                                 <tr>
-                                    <th class="py-3 px-4">Date</th>
-                                    <th class="py-3">Check-In</th>
-                                    <th class="py-3">Check-Out</th>
-                                    <th class="py-3">Duration</th>
-                                    <th class="py-3 px-4 text-end">Status</th>
+                                    <th class="ps-4">Workout</th>
+                                    <th>Muscles Targeted</th>
+                                    <th>Completed At</th>
+                                    <th class="pe-4 text-end">Action</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for record in attendances %}
+                                {% for log in analytics.workouts.recent %}
                                 <tr>
-                                    <td class="px-4">{{ record.checked_in_at|date:"M d, Y" }}</td>
-                                    <td>{{ record.checked_in_at|date:"h:i A" }}</td>
-                                    <td>
-                                        {% if record.checked_out_at %}
-                                            {{ record.checked_out_at|date:"h:i A" }}
-                                        {% else %}
-                                            <span class="text-muted small">In Progress</span>
-                                        {% endif %}
+                                    <td class="ps-4">
+                                        <div class="fw-bold">{{ log.workout.name }}</div>
+                                        <small class="text-muted">{{ log.workout.get_difficulty_display }}</small>
                                     </td>
                                     <td>
-                                        {% if record.checked_out_at %}
-                                            <span class="text-info">{{ record.checked_out_at|timeuntil:record.checked_in_at }}</span>
-                                        {% else %}
-                                            <span class="badge bg-success bg-opacity-10 text-success border border-success">Active</span>
-                                        {% endif %}
+                                        {% for muscle in log.workout.target_muscles %}
+                                            <span class="badge bg-secondary bg-opacity-25 text-light border border-secondary px-2 py-1 me-1" style="font-size: 0.6rem;">{{ muscle }}</span>
+                                        {% endfor %}
                                     </td>
-                                    <td class="px-4 text-end">
-                                        {% if record.checked_out_at %}
-                                            <span class="badge bg-secondary opacity-50">Completed</span>
-                                        {% else %}
-                                            <span class="badge bg-success">Check-In</span>
-                                        {% endif %}
+                                    <td>{{ log.completed_at|date:"M d, Y h:i A" }}</td>
+                                    <td class="pe-4 text-end">
+                                        <a href="{% url 'workout_detail' log.workout.pk %}" class="btn btn-sm btn-outline-primary py-1 px-3">Redo</a>
                                     </td>
                                 </tr>
                                 {% empty %}
                                 <tr>
-                                    <td colspan="5" class="text-center py-5">
-                                        <span class="material-icons text-muted mb-2" style="font-size: 3rem; opacity: 0.3;">history</span>
-                                        <p class="text-muted mb-0">No records found for the selected period.</p>
+                                    <td colspan="4" class="text-center py-5 text-muted italic">
+                                        No workouts completed yet. Time to hit the gym! 🏋️‍♂️
                                     </td>
                                 </tr>
                                 {% endfor %}
@@ -151,7 +252,7 @@
     Chart.defaults.color = '#888888';
     Chart.defaults.borderColor = '#2a2a2a';
 
-    // 1. Activity Over Time Chart (Line Chart)
+    // 1. Activity Chart
     const ctxActivity = document.getElementById('activityChart').getContext('2d');
     new Chart(ctxActivity, {
         type: 'line',
@@ -172,19 +273,12 @@
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: { stepSize: 1, precision: 0 }
-                }
-            }
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 } } }
         }
     });
 
-    // 2. Weekly Routine Chart (Radar)
+    // 2. Weekly Routine Chart
     const ctxRoutine = document.getElementById('routineChart').getContext('2d');
     new Chart(ctxRoutine, {
         type: 'radar',
@@ -202,9 +296,7 @@
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false }
-            },
+            plugins: { legend: { display: false } },
             scales: {
                 r: {
                     beginAtZero: true,
@@ -216,7 +308,7 @@
         }
     });
 
-    // 3. Peak Hours Chart (Bar)
+    // 3. Peak Hours Chart
     const ctxPeak = document.getElementById('peakHoursChart').getContext('2d');
     new Chart(ctxPeak, {
         type: 'bar',
@@ -232,13 +324,63 @@
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false }
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+        }
+    });
+
+    // 4. Muscle Distribution (Donut)
+    if (document.getElementById('muscleDistributionChart')) {
+        const ctxMuscle = document.getElementById('muscleDistributionChart').getContext('2d');
+        new Chart(ctxMuscle, {
+            type: 'doughnut',
+            data: {
+                labels: [{% for label in analytics.workouts.muscle_labels %}'{{ label }}',{% endfor %}],
+                datasets: [{
+                    data: [{% for val in analytics.workouts.muscle_data %}{{ val }},{% endfor %}],
+                    backgroundColor: [
+                        '#0d6efd', '#198754', '#ffc107', '#dc3545', '#0dcaf0', 
+                        '#6610f2', '#fd7e14', '#20c997', '#d63384', '#6c757d'
+                    ],
+                    borderWidth: 0,
+                    hoverOffset: 15
+                }]
             },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: { boxWidth: 12, padding: 15 }
+                    }
+                },
+                cutout: '70%'
+            }
+        });
+    }
+
+    // 5. Workout Frequency Chart (Bar)
+    const ctxWorkoutFreq = document.getElementById('workoutFrequencyChart').getContext('2d');
+    new Chart(ctxWorkoutFreq, {
+        type: 'bar',
+        data: {
+            labels: [{% for item in analytics.workouts.history %}'{{ item.date }}',{% endfor %}],
+            datasets: [{
+                label: 'Workouts',
+                data: [{% for item in analytics.workouts.history %}{{ item.count }},{% endfor %}],
+                backgroundColor: '#0dcaf0',
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
             scales: {
                 y: {
                     beginAtZero: true,
-                    ticks: { stepSize: 1 }
+                    ticks: { stepSize: 1, precision: 0 }
                 }
             }
         }
@@ -246,25 +388,15 @@
 </script>
 
 <style>
-    /* Custom spacing for reports fluid container */
-    .container-fluid {
-        max-width: 1400px;
-    }
+    .container-fluid { max-width: 1400px; }
+    .nav-pills .nav-link { color: #888; font-weight: 500; transition: all 0.2s; }
+    .nav-pills .nav-link:hover { color: white; background: rgba(255,255,255,0.1); }
+    .nav-pills .nav-link.active { background: white !important; color: black !important; }
     
-    /* Table scrollbar styling */
-    .table-responsive::-webkit-scrollbar {
-        width: 8px;
-    }
-    .table-responsive::-webkit-scrollbar-track {
-        background: transparent;
-    }
-    .table-responsive::-webkit-scrollbar-thumb {
-        background: #2a2a2a;
-        border-radius: 10px;
-    }
-    .table-responsive::-webkit-scrollbar-thumb:hover {
-        background: #3a3a3a;
-    }
+    .table-responsive::-webkit-scrollbar { width: 8px; height: 8px; }
+    .table-responsive::-webkit-scrollbar-track { background: transparent; }
+    .table-responsive::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 10px; }
+    .table-responsive::-webkit-scrollbar-thumb:hover { background: #3a3a3a; }
 </style>
 {% endblock %}
 
