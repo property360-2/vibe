@@ -7,7 +7,7 @@ Follow these steps to deploy the "Vibe" project on Render.com.
 1.  **Create a New Web Service**: Choose your GitHub repository.
 2.  **Environment**: Python
 3.  **Build Command**: `./build.sh`
-4.  **Start Command**: `gunicorn vibe.wsgi:application`
+4.  **Start Command**: `x``
 
 ## Environment Variables
 
