@@ -52,7 +52,7 @@ Follow these steps to set up the project locally.
 
 ### 2. Clone the Repository
 ```bash
-git clone https://github.com/yourusername/vibe.git
+git clone https://github.com/property360-2/vibe.git
 cd vibe
 ```
 
