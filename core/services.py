@@ -418,6 +418,40 @@ def generate_dashboard_insights():
         "New member acquisition is up 150% from last week."
     ]
 
+def generate_member_insights(member):
+    """
+    Generate insights for a specific member for the detail view.
+    """
+    prob, risk = predict_churn(member)
+    
+    active_pass = member.get_active_pass()
+    days_left = active_pass.days_remaining if active_pass else 0
+    
+    now = timezone.now()
+    attendance_7 = member.attendances.filter(checked_in_at__gte=now - timedelta(days=7)).count()
+    attendance_3 = member.attendances.filter(checked_in_at__gte=now - timedelta(days=3)).count()
+    
+    recommendation = "Keep engaging!"
+    if risk == 'Critical':
+        recommendation = "Urgent: Personal outreach needed. Offer incentive."
+    elif risk == 'High':
+        recommendation = "Reach out to see if they need help with routine."
+    elif risk == 'Medium':
+        recommendation = "Encourage them to join a challenge."
+    elif days_left > 0 and days_left <= 5:
+        recommendation = "Remind them to renew their pass soon."
+    elif attendance_7 >= 3:
+        recommendation = "Acknowledge their consistency!"
+        
+    return {
+        'return_probability': prob,
+        'risk_level': risk,
+        'days_left': days_left,
+        'attendance_7': attendance_7,
+        'attendance_3': attendance_3,
+        'recommendation': recommendation
+    }
+
 def get_sales_count_by_plan():
     """Get count of passes sold per plan"""
     return MembershipPass.objects.values(plan_name=F('membership_plan__name')).annotate(
