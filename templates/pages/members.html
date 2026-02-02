@@ -82,20 +82,20 @@
                             </div>
 
                             <!-- Mobile Actions -->
-                            <div class="dropdown d-xl-none">
-                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    Actions
+                            <div class="d-xl-none">
+                                <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1" 
+                                        type="button" 
+                                        onclick="openMemberActions(
+                                            {{ member.pk }}, 
+                                            '{{ member.name|escapejs }}', 
+                                            '{% url 'check_in_member' member.pk %}', 
+                                            '{% url 'check_out_member' member.pk %}', 
+                                            '{% url 'member_detail' member.pk %}', 
+                                            '{% url 'member_edit' member.pk %}', 
+                                            '{% url 'member_delete' member.pk %}'
+                                        )">
+                                    <span class="material-icons" style="font-size: 1.1rem;">more_horiz</span> Actions
                                 </button>
-                                <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item text-success" href="{% url 'check_in_member' member.pk %}"><span class="material-icons fs-6 me-2 align-middle">login</span>Time In</a></li>
-                                    <li><a class="dropdown-item text-warning" href="{% url 'check_out_member' member.pk %}"><span class="material-icons fs-6 me-2 align-middle">logout</span>Time Out</a></li>
-                                    <li><button class="dropdown-item text-info" onclick="openSellPassModal({{ member.pk }}, '{{ member.name|escapejs }}')"><span class="material-icons fs-6 me-2 align-middle">confirmation_number</span>Give Pass</button></li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item" href="{% url 'member_detail' member.pk %}"><span class="material-icons fs-6 me-2 align-middle">visibility</span>View</a></li>
-                                    <li><a class="dropdown-item" href="{% url 'member_edit' member.pk %}"><span class="material-icons fs-6 me-2 align-middle">edit</span>Edit</a></li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li><button class="dropdown-item text-danger" onclick="confirmDelete('{{ member.name|escapejs }}', '{% url 'member_delete' member.pk %}')"><span class="material-icons fs-6 me-2 align-middle">delete</span>Delete</button></li>
-                                </ul>
                             </div>
                         </td>
                     </tr>
@@ -163,6 +163,42 @@
                         </div>
                         {% endfor %}
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Mobile Member Actions Modal -->
+<div class="modal fade" id="memberActionsModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="memberActionsTitle">Actions</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-2">
+                <div class="d-grid gap-2">
+                    <a href="#" id="actionTimeIn" class="btn btn-outline-success d-flex align-items-center justify-content-center gap-2 py-2">
+                        <span class="material-icons">login</span> Time In
+                    </a>
+                    <a href="#" id="actionTimeOut" class="btn btn-outline-warning d-flex align-items-center justify-content-center gap-2 py-2">
+                        <span class="material-icons">logout</span> Time Out
+                    </a>
+                    <button type="button" id="actionGivePass" class="btn btn-outline-info d-flex align-items-center justify-content-center gap-2 py-2">
+                        <span class="material-icons">confirmation_number</span> Give Pass
+                    </button>
+                    <hr class="my-1">
+                    <a href="#" id="actionView" class="btn btn-outline-secondary d-flex align-items-center justify-content-center gap-2 py-2">
+                        <span class="material-icons">visibility</span> View Profile
+                    </a>
+                    <a href="#" id="actionEdit" class="btn btn-outline-secondary d-flex align-items-center justify-content-center gap-2 py-2">
+                        <span class="material-icons">edit</span> Edit Member
+                    </a>
+                    <hr class="my-1">
+                    <button type="button" id="actionDelete" class="btn btn-outline-danger d-flex align-items-center justify-content-center gap-2 py-2">
+                        <span class="material-icons">delete</span> Delete Member
+                    </button>
                 </div>
             </div>
         </div>
@@ -478,6 +514,34 @@ async function fetchMembers(query) {
     } finally {
         tableContainer.style.opacity = '1';
     }
+}
+
+// Mobile Actions Modal Logic
+const memberActionsModal = new bootstrap.Modal(document.getElementById('memberActionsModal'));
+
+function openMemberActions(id, name, checkInUrl, checkOutUrl, viewUrl, editUrl, deleteUrl) {
+    document.getElementById('memberActionsTitle').textContent = name;
+    
+    document.getElementById('actionTimeIn').href = checkInUrl;
+    document.getElementById('actionTimeOut').href = checkOutUrl;
+    document.getElementById('actionView').href = viewUrl;
+    document.getElementById('actionEdit').href = editUrl;
+    
+    // Give Pass button
+    const givePassBtn = document.getElementById('actionGivePass');
+    givePassBtn.onclick = function() {
+        memberActionsModal.hide();
+        openSellPassModal(id, name);
+    };
+    
+    // Delete button
+    const deleteBtn = document.getElementById('actionDelete');
+    deleteBtn.onclick = function() {
+        memberActionsModal.hide();
+        confirmDelete(name, deleteUrl);
+    };
+    
+    memberActionsModal.show();
 }
 </script>
 
