@@ -3,6 +3,22 @@ from django.utils import timezone
 from django.contrib.auth.models import User
 from datetime import timedelta
 
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
+@receiver(post_save, sender=User)
+def create_user_settings(sender, instance, created, **kwargs):
+    if created:
+        UserSetting.objects.create(user=instance)
+
+class UserSetting(models.Model):
+    """UI Preferences for any user"""
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='settings')
+    theme = models.CharField(max_length=10, default='dark', choices=[('dark', 'Dark Mode'), ('light', 'Light Mode')])
+    font_size = models.CharField(max_length=10, default='medium', choices=[('small', 'Small'), ('medium', 'Medium'), ('large', 'Large')])
+
+    def __str__(self):
+        return f"{self.user.username}'s Settings"
 
 class MembershipPlan(models.Model):
     """Configurable membership plans for the gym"""
@@ -102,34 +118,29 @@ class MembershipPass(models.Model):
 
 
 class Attendance(models.Model):
-    """Member check-in records"""
+    """Daily check-ins"""
     member = models.ForeignKey(Member, on_delete=models.CASCADE, related_name='attendances')
-    membership_pass = models.ForeignKey(MembershipPass, on_delete=models.CASCADE, related_name='attendances')
+    membership_pass = models.ForeignKey(MembershipPass, on_delete=models.SET_NULL, null=True, blank=True)
     checked_in_at = models.DateTimeField(auto_now_add=True)
     checked_out_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ['-checked_in_at']
-        verbose_name_plural = 'Attendance Records'
 
     def __str__(self):
         return f"{self.member.name} - {self.checked_in_at.strftime('%Y-%m-%d %H:%M')}"
 
 
 class CustomerProfile(models.Model):
-    """Stores personalization data for the fitness assistant"""
+    """Extended profile for members to track stats and preferences"""
     EXPERIENCE_CHOICES = [
         ('beginner', 'Beginner'),
         ('intermediate', 'Intermediate'),
         ('advanced', 'Advanced'),
     ]
     TRAINING_DAYS_CHOICES = [
-        (1, '1 Day'),
-        (2, '2 Days'),
-        (3, '3 Days'),
-        (4, '4 Days'),
-        (5, '5 Days'),
-        (6, '6 Days'),
+        (1, '1 Day'), (2, '2 Days'), (3, '3 Days'),
+        (4, '4 Days'), (5, '5 Days'), (6, '6 Days'),
     ]
     GOAL_CHOICES = [
         ('muscle_gain', 'Muscle Gain'),
@@ -157,6 +168,9 @@ class CustomerProfile(models.Model):
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    theme = models.CharField(max_length=10, default='dark', choices=[('dark', 'Dark Mode'), ('light', 'Light Mode')])
+    font_size = models.CharField(max_length=10, default='medium', choices=[('small', 'Small'), ('medium', 'Medium'), ('large', 'Large')])
 
     def __str__(self):
         return f"{self.member.name}'s Profile"

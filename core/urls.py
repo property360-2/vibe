@@ -40,4 +40,5 @@ urlpatterns = [
     path('attendance/in/<int:pk>/', views.check_in_member, name='check_in_member'),
     path('attendance/out/<int:pk>/', views.check_out_member, name='check_out_member'),
     path('my-dashboard/password/', views.change_password, name='change_password'),
+    path('settings/', views.user_settings, name='user_settings'),
 ]

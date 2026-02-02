@@ -19,7 +19,7 @@
             <div class="card-body text-center d-flex flex-column justify-content-center">
                 {% if active_pass %}
                     <div class="mb-3">
-                        <span class="material-icons text-success" style="font-size: 4rem;">check_circle</span>
+                        <span class="material-icons text-success" style="font-size: 4rem;" role="img" aria-label="Active Membership">check_circle</span>
                     </div>
                     <h4>Active Plan</h4>
                     <p class="text-muted">{{ active_pass.membership_plan.name }}</p>
@@ -28,7 +28,7 @@
                     <p class="small text-muted">Expires on {{ active_pass.end_date|date:"M d, Y" }}</p>
                 {% else %}
                     <div class="mb-3">
-                        <span class="material-icons text-danger" style="font-size: 4rem;">error</span>
+                        <span class="material-icons text-danger" style="font-size: 4rem;" role="img" aria-label="No Active Membership">error</span>
                     </div>
                     <h4>No Active Plan</h4>
                     <p class="text-muted mb-4">Your membership has expired or you haven't purchased one yet.</p>

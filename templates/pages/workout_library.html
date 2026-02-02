@@ -2,21 +2,16 @@
 
 {% block content %}
 <div class="row g-4 mb-4 align-items-center">
-    <div class="col-md-4">
-        <h1 class="h3 mb-0">Workout Library</h1>
-        <p class="text-muted mb-0">Explore workouts tailored for your goals</p>
-    </div>
-    
-    <div class="col-md-8">
+    <div class="col-12">
         <div class="d-flex flex-wrap justify-content-md-end gap-2">
             <!-- Search Bar -->
             <form method="get" class="d-flex gap-2 flex-grow-1 flex-md-grow-0" style="min-width: 250px;">
                 <div class="input-group">
-                    <span class="input-group-text bg-dark border-secondary text-muted">
+                    <span class="input-group-text border-secondary text-muted">
                         <span class="material-icons fs-5">search</span>
                     </span>
-                    <input type="text" name="q" class="form-control bg-dark border-secondary text-light" 
-                           placeholder="Search workouts or muscles..." value="{{ query|default:'' }}">
+                    <input type="text" name="q" class="form-control border-secondary" 
+                           placeholder="Search workouts or muscles..." aria-label="Search workouts" value="{{ query|default:'' }}">
                     {% if current_difficulty %}<input type="hidden" name="difficulty" value="{{ current_difficulty }}">{% endif %}
                     {% if current_goal %}<input type="hidden" name="goal" value="{{ current_goal }}">{% endif %}
                 </div>
@@ -24,36 +19,29 @@
             </form>
 
             <div class="dropdown">
-                <button class="btn btn-outline-secondary dropdown-toggle h-100" type="button" data-bs-toggle="dropdown">
+                <button class="btn btn-outline-secondary dropdown-toggle h-100" type="button" data-bs-toggle="dropdown" aria-label="Filter options">
                     <span class="material-icons align-middle fs-6 me-1">filter_list</span> Filter
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end shadow">
-                    <li><a class="dropdown-item {% if not current_difficulty and not current_goal %}active{% endif %}" href="?{% if query %}q={{ query }}{% endif %}">All Workouts</a></li>
+                    <li><a class="dropdown-item" href="?difficulty=beginner">Beginner</a></li>
+                    <li><a class="dropdown-item" href="?difficulty=intermediate">Intermediate</a></li>
+                    <li><a class="dropdown-item" href="?difficulty=advanced">Advanced</a></li>
                     <li><hr class="dropdown-divider"></li>
-                    <li><h6 class="dropdown-header">Difficulty</h6></li>
-                    <li><a class="dropdown-item {% if current_difficulty == 'beginner' %}active{% endif %}" href="?difficulty=beginner{% if query %}&q={{ query }}{% endif %}{% if current_goal %}&goal={{ current_goal }}{% endif %}">Beginner</a></li>
-                    <li><a class="dropdown-item {% if current_difficulty == 'intermediate' %}active{% endif %}" href="?difficulty=intermediate{% if query %}&q={{ query }}{% endif %}{% if current_goal %}&goal={{ current_goal }}{% endif %}">Intermediate</a></li>
-                    <li><a class="dropdown-item {% if current_difficulty == 'advanced' %}active{% endif %}" href="?difficulty=advanced{% if query %}&q={{ query }}{% endif %}{% if current_goal %}&goal={{ current_goal }}{% endif %}">Advanced</a></li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li><h6 class="dropdown-header">Goal</h6></li>
-                    <li><a class="dropdown-item {% if current_goal == 'muscle_gain' %}active{% endif %}" href="?goal=muscle_gain{% if query %}&q={{ query }}{% endif %}{% if current_difficulty %}&difficulty={{ current_difficulty }}{% endif %}">Muscle Gain</a></li>
-                    <li><a class="dropdown-item {% if current_goal == 'fat_loss' %}active{% endif %}" href="?goal=fat_loss{% if query %}&q={{ query }}{% endif %}{% if current_difficulty %}&difficulty={{ current_difficulty }}{% endif %}">Fat Loss</a></li>
-                    <li><a class="dropdown-item {% if current_goal == 'strength' %}active{% endif %}" href="?goal=strength{% if query %}&q={{ query }}{% endif %}{% if current_difficulty %}&difficulty={{ current_difficulty }}{% endif %}">Strength</a></li>
+                    <li><a class="dropdown-item" href="?goal=muscle_gain">Muscle Gain</a></li>
+                    <li><a class="dropdown-item" href="?goal=fat_loss">Fat Loss</a></li>
                 </ul>
             </div>
         </div>
-    </div>
-</div>
 
 <!-- Active Filters -->
 {% if active_filters %}
 <div class="d-flex flex-wrap gap-2 mb-4 align-items-center">
     <span class="text-muted small">Active Filters:</span>
     {% for filter in active_filters %}
-    <span class="badge bg-dark border border-secondary py-2 px-3 d-flex align-items-center gap-2">
+    <span class="badge bg-secondary bg-opacity-10 text-reset border border-secondary py-2 px-3 d-flex align-items-center gap-2">
         {{ filter.label }}
         <a href="?{% for key, val in request.GET.items %}{% if key != filter.param and key != 'page' %}{{ key }}={{ val }}&{% endif %}{% endfor %}" 
-           class="text-muted hover-light text-decoration-none">
+           class="text-muted hover-opacity text-decoration-none">
             <span class="material-icons fs-6 align-middle">close</span>
         </a>
     </span>
@@ -75,7 +63,7 @@
                 <div class="d-flex justify-content-between align-items-start mb-2">
                     <div>
                         <span class="badge bg-warning text-dark me-1">{{ workout.difficulty|title }}</span>
-                        <span class="badge bg-dark border border-warning text-warning small">{{ workout.get_goal_type_display }}</span>
+                        <span class="badge border border-warning text-warning small">{{ workout.get_goal_type_display }}</span>
                     </div>
                 </div>
                 <h5 class="card-title text-reset">{{ workout.name }}</h5>
@@ -92,11 +80,11 @@
                 
                 <div class="mb-3">
                     {% for muscle in workout.target_muscles %}
-                    <span class="badge bg-dark text-muted border border-secondary">{{ muscle }}</span>
+                    <span class="badge bg-secondary bg-opacity-25 text-reset border border-secondary">{{ muscle }}</span>
                     {% endfor %}
                 </div>
                 
-                <a href="{% url 'workout_detail' workout.pk %}" class="btn btn-warning w-100 text-dark fw-bold">Start Workout</a>
+                <a href="{% url 'workout_detail' workout.pk %}" class="btn btn-warning w-100 fw-bold">Start Workout</a>
             </div>
         </div>
     </div>
@@ -119,15 +107,16 @@
 <div class="row g-4">
     {% for workout in workouts %}
     <div class="col-md-4">
-        <div class="card h-100 border-secondary bg-dark bg-opacity-25 card-hover">
+        <!-- Card with Theme Support -->
+        <div class="card h-100 card-hover">
             <div class="card-body d-flex flex-column">
                 <div class="d-flex justify-content-between align-items-start mb-2">
                     <span class="badge {% if workout.difficulty == 'beginner' %}bg-success{% elif workout.difficulty == 'intermediate' %}bg-primary{% else %}bg-danger{% endif %} bg-opacity-75">
                         {{ workout.difficulty|title }}
                     </span>
-                    <span class="badge bg-secondary bg-opacity-25 text-muted">{{ workout.get_goal_type_display }}</span>
+                    <span class="badge bg-secondary bg-opacity-25 text-reset">{{ workout.get_goal_type_display }}</span>
                 </div>
-                <h5 class="card-title">{{ workout.name }}</h5>
+                <h5 class="card-title text-reset">{{ workout.name }}</h5>
                 <p class="card-text text-muted small mb-3 flex-grow-1">{{ workout.description|truncatechars:100 }}</p>
                 
                 <div class="d-flex align-items-center gap-3 mb-3 text-muted small">
@@ -141,14 +130,17 @@
                 
                 <div class="mb-3">
                     {% for muscle in workout.target_muscles|slice:":3" %}
-                    <span class="badge bg-dark text-muted border border-secondary">{{ muscle }}</span>
+                    <span class="badge bg-secondary bg-opacity-25 text-reset border border-secondary">{{ muscle }}</span>
                     {% endfor %}
                     {% if workout.target_muscles|length > 3 %}
-                    <span class="badge bg-dark text-muted border border-secondary">+{{ workout.target_muscles|length|add:"-3" }}</span>
+                    <span class="badge bg-secondary bg-opacity-25 text-reset border border-secondary">+{{ workout.target_muscles|length|add:"-3" }}</span>
                     {% endif %}
                 </div>
                 
-                <a href="{% url 'workout_detail' workout.pk %}" class="btn btn-outline-light w-100">View Details</a>
+                <div class="d-grid gap-2">
+                    <a href="{% url 'workout_detail' workout.pk %}" class="btn btn-primary">Start Workout</a>
+                    <a href="{% url 'workout_detail' workout.pk %}" class="btn btn-outline-secondary btn-sm">View Details</a>
+                </div>
             </div>
         </div>
     </div>
@@ -168,13 +160,13 @@
     <ul class="pagination justify-content-center">
         {% if workouts.has_previous %}
         <li class="page-item">
-            <a class="page-link bg-dark border-secondary text-light" href="?page={{ workouts.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if current_difficulty %}&difficulty={{ current_difficulty }}{% endif %}{% if current_goal %}&goal={{ current_goal }}{% endif %}">
+            <a class="page-link border-secondary" href="?page={{ workouts.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if current_difficulty %}&difficulty={{ current_difficulty }}{% endif %}{% if current_goal %}&goal={{ current_goal }}{% endif %}" aria-label="Previous Page">
                 <span class="material-icons fs-6 align-middle">chevron_left</span>
             </a>
         </li>
         {% else %}
         <li class="page-item disabled">
-            <span class="page-link bg-dark border-secondary text-muted"><span class="material-icons fs-6 align-middle">chevron_left</span></span>
+            <span class="page-link border-secondary text-muted"><span class="material-icons fs-6 align-middle">chevron_left</span></span>
         </li>
         {% endif %}
 
@@ -183,20 +175,20 @@
         <li class="page-item active"><span class="page-link bg-primary border-primary">{{ i }}</span></li>
         {% elif i > workouts.number|add:'-3' and i < workouts.number|add:'3' %}
         <li class="page-item">
-            <a class="page-link bg-dark border-secondary text-light" href="?page={{ i }}{% if query %}&q={{ query }}{% endif %}{% if current_difficulty %}&difficulty={{ current_difficulty }}{% endif %}{% if current_goal %}&goal={{ current_goal }}{% endif %}">{{ i }}</a>
+            <a class="page-link border-secondary" href="?page={{ i }}{% if query %}&q={{ query }}{% endif %}{% if current_difficulty %}&difficulty={{ current_difficulty }}{% endif %}{% if current_goal %}&goal={{ current_goal }}{% endif %}">{{ i }}</a>
         </li>
         {% endif %}
         {% endfor %}
 
         {% if workouts.has_next %}
         <li class="page-item">
-            <a class="page-link bg-dark border-secondary text-light" href="?page={{ workouts.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if current_difficulty %}&difficulty={{ current_difficulty }}{% endif %}{% if current_goal %}&goal={{ current_goal }}{% endif %}">
+            <a class="page-link border-secondary" href="?page={{ workouts.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if current_difficulty %}&difficulty={{ current_difficulty }}{% endif %}{% if current_goal %}&goal={{ current_goal }}{% endif %}" aria-label="Next Page">
                 <span class="material-icons fs-6 align-middle">chevron_right</span>
             </a>
         </li>
         {% else %}
         <li class="page-item disabled">
-            <span class="page-link bg-dark border-secondary text-muted"><span class="material-icons fs-6 align-middle">chevron_right</span></span>
+            <span class="page-link border-secondary text-muted"><span class="material-icons fs-6 align-middle">chevron_right</span></span>
         </li>
         {% endif %}
     </ul>

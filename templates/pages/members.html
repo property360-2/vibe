@@ -16,6 +16,7 @@
                id="memberSearchInput"
                class="form-control" 
                placeholder="Search members by name or phone..."
+               aria-label="Search members"
                value="{{ query|default:'' }}">
     </div>
 </div>
@@ -58,25 +59,43 @@
                         </td>
                         <td>{{ member.created_at|date:"M d, Y" }}</td>
                         <td>
-                            <div class="btn-group btn-group-sm">
-                                <a href="{% url 'check_in_member' member.pk %}" class="btn btn-success" title="Time In">
+                            <!-- Desktop Actions -->
+                            <div class="d-none d-xl-flex btn-group btn-group-sm">
+                                <a href="{% url 'check_in_member' member.pk %}" class="btn btn-success" title="Time In" aria-label="Time In">
                                     <span class="material-icons" style="font-size: 1rem;">login</span>
                                 </a>
-                                <a href="{% url 'check_out_member' member.pk %}" class="btn btn-warning" title="Time Out" style="color: #000;">
+                                <a href="{% url 'check_out_member' member.pk %}" class="btn btn-warning" title="Time Out" aria-label="Time Out">
                                     <span class="material-icons" style="font-size: 1rem;">logout</span>
                                 </a>
-                                <button type="button" class="btn btn-info" onclick="openSellPassModal({{ member.pk }}, '{{ member.name|escapejs }}')" title="Give Pass" style="color: #000;">
+                                <button type="button" class="btn btn-info" onclick="openSellPassModal({{ member.pk }}, '{{ member.name|escapejs }}')" title="Give Pass" aria-label="Give Pass">
                                     <span class="material-icons" style="font-size: 1rem;">confirmation_number</span>
                                 </button>
-                                <a href="{% url 'member_detail' member.pk %}" class="btn btn-outline-light" title="View">
+                                <a href="{% url 'member_detail' member.pk %}" class="btn btn-outline-light" title="View" aria-label="View Member">
                                     <span class="material-icons" style="font-size: 1rem;">visibility</span>
                                 </a>
-                                <a href="{% url 'member_edit' member.pk %}" class="btn btn-outline-light" title="Edit">
+                                <a href="{% url 'member_edit' member.pk %}" class="btn btn-outline-light" title="Edit" aria-label="Edit Member">
                                     <span class="material-icons" style="font-size: 1rem;">edit</span>
                                 </a>
-                                <a href="{% url 'member_delete' member.pk %}" class="btn btn-danger" title="Delete">
+                                <button type="button" class="btn btn-danger" onclick="confirmDelete('{{ member.name|escapejs }}', '{% url 'member_delete' member.pk %}')" title="Delete" aria-label="Delete Member">
                                     <span class="material-icons" style="font-size: 1rem;">delete</span>
-                                </a>
+                                </button>
+                            </div>
+
+                            <!-- Mobile Actions -->
+                            <div class="dropdown d-xl-none">
+                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Actions
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item text-success" href="{% url 'check_in_member' member.pk %}"><span class="material-icons fs-6 me-2 align-middle">login</span>Time In</a></li>
+                                    <li><a class="dropdown-item text-warning" href="{% url 'check_out_member' member.pk %}"><span class="material-icons fs-6 me-2 align-middle">logout</span>Time Out</a></li>
+                                    <li><button class="dropdown-item text-info" onclick="openSellPassModal({{ member.pk }}, '{{ member.name|escapejs }}')"><span class="material-icons fs-6 me-2 align-middle">confirmation_number</span>Give Pass</button></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="{% url 'member_detail' member.pk %}"><span class="material-icons fs-6 me-2 align-middle">visibility</span>View</a></li>
+                                    <li><a class="dropdown-item" href="{% url 'member_edit' member.pk %}"><span class="material-icons fs-6 me-2 align-middle">edit</span>Edit</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><button class="dropdown-item text-danger" onclick="confirmDelete('{{ member.name|escapejs }}', '{% url 'member_delete' member.pk %}')"><span class="material-icons fs-6 me-2 align-middle">delete</span>Delete</button></li>
+                                </ul>
                             </div>
                         </td>
                     </tr>
@@ -408,25 +427,44 @@ async function fetchMembers(query) {
                             <td>${member.joined}</td>
                             <td>
                                 <div class="btn-group btn-group-sm">
-                                    <a href="/attendance/in/${member.pk}/" class="btn btn-success" title="Time In">
-                                        <span class="material-icons" style="font-size: 1rem;">login</span>
-                                    </a>
-                                    <a href="/attendance/out/${member.pk}/" class="btn btn-warning" title="Time Out" style="color: #000;">
-                                        <span class="material-icons" style="font-size: 1rem;">logout</span>
-                                    </a>
-                                    <button type="button" class="btn btn-info" onclick="openSellPassModal(${member.pk}, '${member.name.replace(/'/g, "\\'")}')" title="Give Pass" style="color: #000;">
-                                        <span class="material-icons" style="font-size: 1rem;">confirmation_number</span>
-                                    </button>
-                                    <a href="/members/${member.pk}/" class="btn btn-outline-light" title="View">
-                                        <span class="material-icons" style="font-size: 1rem;">visibility</span>
-                                    </a>
-                                    <a href="/members/${member.pk}/edit/" class="btn btn-outline-light" title="Edit">
-                                        <span class="material-icons" style="font-size: 1rem;">edit</span>
-                                    </a>
-                                    <a href="/members/${member.pk}/delete/" class="btn btn-danger" title="Delete">
-                                        <span class="material-icons" style="font-size: 1rem;">delete</span>
-                                    </a>
-                                </div>
+                                    <!-- Desktop Actions -->
+                                    <div class="d-none d-xl-flex btn-group btn-group-sm">
+                                        <a href="/attendance/in/${member.pk}/" class="btn btn-success" title="Time In" aria-label="Time In">
+                                            <span class="material-icons" style="font-size: 1rem;">login</span>
+                                        </a>
+                                        <a href="/attendance/out/${member.pk}/" class="btn btn-warning" title="Time Out" aria-label="Time Out">
+                                            <span class="material-icons" style="font-size: 1rem;">logout</span>
+                                        </a>
+                                        <button type="button" class="btn btn-info" onclick="openSellPassModal(${member.pk}, '${member.name.replace(/'/g, "\\'")}')" title="Give Pass" aria-label="Give Pass">
+                                            <span class="material-icons" style="font-size: 1rem;">confirmation_number</span>
+                                        </button>
+                                        <a href="/members/${member.pk}/" class="btn btn-outline-light" title="View" aria-label="View Member">
+                                            <span class="material-icons" style="font-size: 1rem;">visibility</span>
+                                        </a>
+                                        <a href="/members/${member.pk}/edit/" class="btn btn-outline-light" title="Edit" aria-label="Edit Member">
+                                            <span class="material-icons" style="font-size: 1rem;">edit</span>
+                                        </a>
+                                        <button type="button" class="btn btn-danger" onclick="confirmDelete('${member.name.replace(/'/g, "\\'")}', '/members/${member.pk}/delete/')" title="Delete" aria-label="Delete Member">
+                                            <span class="material-icons" style="font-size: 1rem;">delete</span>
+                                        </button>
+                                    </div>
+
+                                    <!-- Mobile Actions -->
+                                    <div class="dropdown d-xl-none">
+                                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                            Actions
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li><a class="dropdown-item text-success" href="/attendance/in/${member.pk}/"><span class="material-icons fs-6 me-2 align-middle">login</span>Time In</a></li>
+                                            <li><a class="dropdown-item text-warning" href="/attendance/out/${member.pk}/"><span class="material-icons fs-6 me-2 align-middle">logout</span>Time Out</a></li>
+                                            <li><button class="dropdown-item text-info" onclick="openSellPassModal(${member.pk}, '${member.name.replace(/'/g, "\\'")}')"><span class="material-icons fs-6 me-2 align-middle">confirmation_number</span>Give Pass</button></li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li><a class="dropdown-item" href="/members/${member.pk}/"><span class="material-icons fs-6 me-2 align-middle">visibility</span>View</a></li>
+                                            <li><a class="dropdown-item" href="/members/${member.pk}/edit/"><span class="material-icons fs-6 me-2 align-middle">edit</span>Edit</a></li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li><button class="dropdown-item text-danger" onclick="confirmDelete('${member.name.replace(/'/g, "\\'")}', '/members/${member.pk}/delete/')"><span class="material-icons fs-6 me-2 align-middle">delete</span>Delete</button></li>
+                                        </ul>
+                                    </div>
                             </td>
                         </tr>
                     `;
@@ -472,6 +510,37 @@ async function fetchMembers(query) {
             </div>
             <div class="modal-footer justify-content-center border-top-0 pt-0">
                 <button type="button" class="btn btn-primary px-4" data-bs-dismiss="modal">Done</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+    <script>
+        function confirmDelete(memberName, deleteUrl) {
+            const modal = new bootstrap.Modal(document.getElementById('deleteMemberModal'));
+            document.getElementById('deleteMemberName').textContent = memberName;
+            document.getElementById('confirmDeleteBtn').href = deleteUrl;
+            modal.show();
+        }
+    </script>
+
+    <!-- Delete Member Modal -->
+    <div class="modal fade" id="deleteMemberModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirm Delete</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete <strong id="deleteMemberName"></strong>?</p>
+                    <p class="text-danger mb-0"><small>This action cannot be undone.</small></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancel</button>
+                    <a href="#" id="confirmDeleteBtn" class="btn btn-danger">Delete Member</a>
+                </div>
             </div>
         </div>
     </div>

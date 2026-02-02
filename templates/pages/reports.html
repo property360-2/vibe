@@ -385,21 +385,43 @@ async function fetchData(tab) {
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Standard white/gray colors for minimalist dark mode
+    // Determine theme from HTML attribute
+    const theme = document.documentElement.getAttribute('data-bs-theme') || 'dark';
+    const isDark = theme === 'dark';
+
+    // Theme Configuration
+    const themeColors = {
+        dark: {
+            text: '#888888',
+            border: '#2a2a2a',
+            grid: '#2a2a2a',
+            bg: '#151515'
+        },
+        light: {
+            text: '#6c757d',
+            border: '#e9ecef',
+            grid: '#e9ecef',
+            bg: '#ffffff'
+        }
+    };
+
+    const currentTheme = themeColors[theme];
+
+    // Standard colors
     const colors = {
-        primary: '#ffffff',
-        secondary: '#d4d4d4',
-        muted: '#888888',
-        border: '#2a2a2a',
+        primary: isDark ? '#ffffff' : '#0d6efd',
+        secondary: isDark ? '#d4d4d4' : '#495057',
         success: '#22c55e',
         danger: '#ef4444',
         warning: '#eab308',
         info: '#3b82f6',
-        chart: ['#ffffff', '#a3a3a3', '#737373', '#404040', '#262626']
+        chart: isDark 
+            ? ['#ffffff', '#a3a3a3', '#737373', '#404040', '#262626']
+            : ['#0d6efd', '#6610f2', '#6f42c1', '#d63384', '#dc3545']
     };
     
-    Chart.defaults.color = colors.muted;
-    Chart.defaults.borderColor = colors.border;
+    Chart.defaults.color = currentTheme.text;
+    Chart.defaults.borderColor = currentTheme.border;
     
     // Sales Chart
     const salesCtx = document.getElementById('salesChart');
@@ -419,7 +441,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 responsive: true,
                 plugins: { legend: { display: false } },
                 scales: {
-                    y: { beginAtZero: true, grid: { color: colors.border } },
+                    y: { beginAtZero: true, grid: { color: currentTheme.grid } },
                     x: { grid: { display: false } }
                 }
             }
@@ -437,7 +459,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     data: [{% for item in revenue_by_plan %}{{ item.total }}{% if not forloop.last %}, {% endif %}{% endfor %}],
                     backgroundColor: colors.chart,
                     borderWidth: 1,
-                    borderColor: '#151515'
+                    borderColor: currentTheme.bg
                 }]
             },
             options: {
@@ -453,14 +475,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const hourlyCtx = document.getElementById('hourlyChart');
     if (hourlyCtx) {
         const hourlyData = {{ hourly_distribution|safe }};
-        const hours = Object.keys(hourlyData).map(h => {
-            const hour = parseInt(h);
-            if (hour === 0) return '12A';
-            if (hour < 12) return hour + 'A';
-            if (hour === 12) return '12P';
-            return (hour - 12) + 'P';
+        // Expected data format: {0: count, 1: count, ...}
+        const hours = Object.keys(hourlyData).sort((a,b) => a-b).map(h => {
+             const hour = parseInt(h);
+             if (hour === 0) return '12A';
+             if (hour < 12) return hour + 'A';
+             if (hour === 12) return '12P';
+             return (hour - 12) + 'P';
         });
-        const values = Object.values(hourlyData);
+        const values = Object.keys(hourlyData).sort((a,b) => a-b).map(h => hourlyData[h]);
         
         new Chart(hourlyCtx, {
             type: 'line',
@@ -480,7 +503,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 responsive: true,
                 plugins: { legend: { display: false } },
                 scales: {
-                    y: { beginAtZero: true, grid: { color: colors.border } },
+                    y: { beginAtZero: true, grid: { color: currentTheme.grid } },
                     x: { grid: { display: false } }
                 }
             }

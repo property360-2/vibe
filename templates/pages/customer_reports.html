@@ -1,8 +1,19 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="container-fluid py-4">
+<div class="container-fluid py-4" id="reportContent">
     <!-- Header & Summary Cards -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-0 fw-bold">My Performance Report</h2>
+            <p class="text-muted small mb-0">Analytics and history for {{ user.username }}</p>
+        </div>
+        <button id="downloadBtn" class="btn btn-primary d-flex align-items-center gap-2">
+            <span class="material-icons fs-5">download</span>
+            Download Report
+        </button>
+    </div>
+
     <div class="row g-4 mb-4">
         <div class="col-md-3">
             <div class="card bg-primary bg-opacity-10 border-primary h-100">
@@ -42,7 +53,7 @@
     </div>
 
     <!-- Navigation Tabs -->
-    <ul class="nav nav-pills mb-4 bg-dark bg-opacity-50 p-2 rounded-3 border border-secondary d-inline-flex">
+    <ul class="nav nav-pills mb-4 p-2 rounded-3 border d-inline-flex" style="border-color: var(--border-color) !important;">
         <li class="nav-item">
             <a class="nav-link active py-2 px-4 d-flex align-items-center gap-2" data-bs-toggle="pill" href="#attendancePane">
                 <span class="material-icons fs-5">history</span> Attendance
@@ -61,7 +72,7 @@
             <!-- Attendance Charts -->
             <div class="row g-4 mb-4">
                 <div class="col-lg-8">
-                    <div class="card h-100 border-secondary bg-dark bg-opacity-25">
+                    <div class="card h-100 border-secondary">
                         <div class="card-header border-secondary bg-transparent py-3">
                             <h5 class="mb-0">Activity Over Time (Past 30 Days)</h5>
                         </div>
@@ -71,7 +82,7 @@
                     </div>
                 </div>
                 <div class="col-lg-4">
-                    <div class="card h-100 border-secondary bg-dark bg-opacity-25">
+                    <div class="card h-100 border-secondary">
                         <div class="card-header border-secondary bg-transparent py-3">
                             <h5 class="mb-0">Weekly Routine</h5>
                         </div>
@@ -84,7 +95,7 @@
 
             <div class="row g-4 mb-4">
                 <div class="col-lg-4">
-                    <div class="card h-100 border-secondary bg-dark bg-opacity-25">
+                    <div class="card h-100 border-secondary">
                         <div class="card-header border-secondary bg-transparent py-3">
                             <h5 class="mb-0">Peak Training Hours</h5>
                         </div>
@@ -94,18 +105,18 @@
                     </div>
                 </div>
                 <div class="col-lg-8">
-                    <div class="card h-100 border-secondary bg-dark bg-opacity-25">
+                    <div class="card h-100 border-secondary">
                         <div class="card-header border-secondary bg-transparent py-3 d-flex justify-content-between align-items-center">
                             <h5 class="mb-0">Attendance History</h5>
                             <form method="get" class="d-flex gap-2">
-                                <input type="date" name="start_date" class="form-control form-control-sm bg-dark border-secondary text-light" value="{{ request.GET.start_date }}">
-                                <input type="date" name="end_date" class="form-control form-control-sm bg-dark border-secondary text-light" value="{{ request.GET.end_date }}">
+                                <input type="date" name="start_date" class="form-control form-control-sm border-secondary" value="{{ request.GET.start_date }}" aria-label="Start Date">
+                                <input type="date" name="end_date" class="form-control form-control-sm border-secondary" value="{{ request.GET.end_date }}" aria-label="End Date">
                                 <button type="submit" class="btn btn-primary btn-sm">Filter</button>
                             </form>
                         </div>
                         <div class="card-body p-0">
                             <div class="table-responsive" style="max-height: 400px;">
-                                <table class="table table-hover table-dark border-secondary align-middle mb-0">
+                                <table class="table table-hover border-secondary align-middle mb-0">
                                     <thead class="bg-secondary bg-opacity-10 text-muted small sticky-top">
                                         <tr>
                                             <th class="py-3 px-4">Date</th>
@@ -164,7 +175,7 @@
             <div class="row g-4 mb-4">
                 <!-- Muscle Distribution -->
                 <div class="col-lg-5">
-                    <div class="card h-100 border-secondary bg-dark bg-opacity-25">
+                    <div class="card h-100 border-secondary">
                         <div class="card-header border-secondary bg-transparent py-3">
                             <h5 class="mb-0">Muscle Groups Trained</h5>
                             <small class="text-muted">Breakdown by target muscle</small>
@@ -184,7 +195,7 @@
 
                 <!-- Frequency Chart -->
                 <div class="col-lg-7">
-                    <div class="card h-100 border-secondary bg-dark bg-opacity-25">
+                    <div class="card h-100 border-secondary">
                         <div class="card-header border-secondary bg-transparent py-3">
                             <h5 class="mb-0">Workout Consistency (Last 7 Days)</h5>
                         </div>
@@ -196,13 +207,13 @@
             </div>
 
             <!-- Recent Workouts Table -->
-            <div class="card border-secondary bg-dark bg-opacity-25">
+            <div class="card border-secondary">
                 <div class="card-header border-secondary bg-transparent py-3">
                     <h5 class="mb-0">Recent Completed Sessions</h5>
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
-                        <table class="table table-hover table-dark mb-0">
+                        <table class="table table-hover mb-0">
                             <thead class="bg-secondary bg-opacity-10 text-muted small">
                                 <tr>
                                     <th class="ps-4">Workout</th>
@@ -220,7 +231,7 @@
                                     </td>
                                     <td>
                                         {% for muscle in log.workout.target_muscles %}
-                                            <span class="badge bg-secondary bg-opacity-25 text-light border border-secondary px-2 py-1 me-1" style="font-size: 0.6rem;">{{ muscle }}</span>
+                                            <span class="badge bg-secondary bg-opacity-10 text-reset border border-secondary px-2 py-1 me-1" style="font-size: 0.6rem;">{{ muscle }}</span>
                                         {% endfor %}
                                     </td>
                                     <td>{{ log.completed_at|date:"M d, Y h:i A" }}</td>
@@ -248,9 +259,40 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
+    const theme = (document.documentElement.getAttribute('data-bs-theme') || 'dark').toLowerCase();
+    const isDark = theme === 'dark';
+
+    // Theme Configuration
+    const themeColors = {
+        dark: {
+            text: '#888888',
+            border: '#2a2a2a',
+            grid: '#2a2a2a',
+            bg: '#151515'
+        },
+        light: {
+            text: '#495057', // Darker gray for better contrast
+            border: '#dee2e6',
+            grid: '#e9ecef',
+            bg: '#ffffff'
+        }
+    };
+
+    const currentTheme = themeColors[theme] || themeColors.dark;
+
+    // Standard colors
+    const colors = {
+        primary: '#0d6efd',
+        secondary: '#6c757d',
+        success: '#198754',
+        info: '#0dcaf0',
+        warning: '#ffc107',
+        grid: currentTheme.grid
+    };
+
     // Universal Styles for Charts
-    Chart.defaults.color = '#888888';
-    Chart.defaults.borderColor = '#2a2a2a';
+    Chart.defaults.color = currentTheme.text;
+    Chart.defaults.borderColor = currentTheme.border;
 
     // 1. Activity Chart
     const ctxActivity = document.getElementById('activityChart').getContext('2d');
@@ -261,20 +303,29 @@
             datasets: [{
                 label: 'Daily Visits',
                 data: [{% for item in analytics.history %}{{ item.count }},{% endfor %}],
-                borderColor: '#0d6efd',
-                backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                borderColor: colors.primary,
+                backgroundColor: isDark ? 'rgba(13, 110, 253, 0.1)' : 'rgba(13, 110, 253, 0.1)',
                 fill: true,
                 tension: 0.4,
                 borderWidth: 3,
                 pointRadius: 4,
-                pointBackgroundColor: '#0d6efd'
+                pointBackgroundColor: colors.primary
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: { legend: { display: false } },
-            scales: { y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 } } }
+            scales: { 
+                y: { 
+                    beginAtZero: true, 
+                    ticks: { stepSize: 1, precision: 0 },
+                    grid: { color: colors.grid }
+                },
+                x: {
+                    grid: { color: colors.grid }
+                }
+            }
         }
     });
 
@@ -288,8 +339,8 @@
                 label: 'Visits per Weekday',
                 data: [{% for val in analytics.routine.data %}{{ val }},{% endfor %}],
                 backgroundColor: 'rgba(25, 135, 84, 0.2)',
-                borderColor: '#198754',
-                pointBackgroundColor: '#198754',
+                borderColor: colors.success,
+                pointBackgroundColor: colors.success,
                 borderWidth: 2
             }]
         },
@@ -297,12 +348,13 @@
             responsive: true,
             maintainAspectRatio: false,
             plugins: { legend: { display: false } },
-            scales: {
+             scales: {
                 r: {
                     beginAtZero: true,
-                    grid: { color: '#2a2a2a' },
-                    angleLines: { color: '#2a2a2a' },
-                    ticks: { display: false, stepSize: 1 }
+                    grid: { color: colors.grid },
+                    angleLines: { color: colors.grid },
+                    ticks: { display: false, stepSize: 1, backdropColor: 'transparent' },
+                    pointLabels: { color: currentTheme.text }
                 }
             }
         }
@@ -317,7 +369,7 @@
             datasets: [{
                 label: 'Frequency',
                 data: [{% for item in analytics.peak_hours %}{{ item.count }},{% endfor %}],
-                backgroundColor: '#ffc107',
+                backgroundColor: colors.warning,
                 borderRadius: 4
             }]
         },
@@ -325,7 +377,16 @@
             responsive: true,
             maintainAspectRatio: false,
             plugins: { legend: { display: false } },
-            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+            scales: { 
+                y: { 
+                    beginAtZero: true, 
+                    ticks: { stepSize: 1 },
+                    grid: { color: colors.grid }
+                },
+                x: {
+                    grid: { display: false }
+                }
+            }
         }
     });
 
@@ -342,7 +403,8 @@
                         '#0d6efd', '#198754', '#ffc107', '#dc3545', '#0dcaf0', 
                         '#6610f2', '#fd7e14', '#20c997', '#d63384', '#6c757d'
                     ],
-                    borderWidth: 0,
+                    borderColor: currentTheme.bg,
+                    borderWidth: 2,
                     hoverOffset: 15
                 }]
             },
@@ -352,7 +414,7 @@
                 plugins: {
                     legend: {
                         position: 'right',
-                        labels: { boxWidth: 12, padding: 15 }
+                        labels: { boxWidth: 12, padding: 15, color: currentTheme.text }
                     }
                 },
                 cutout: '70%'
@@ -369,7 +431,7 @@
             datasets: [{
                 label: 'Workouts',
                 data: [{% for item in analytics.workouts.history %}{{ item.count }},{% endfor %}],
-                backgroundColor: '#0dcaf0',
+                backgroundColor: colors.info,
                 borderRadius: 4
             }]
         },
@@ -380,7 +442,11 @@
             scales: {
                 y: {
                     beginAtZero: true,
-                    ticks: { stepSize: 1, precision: 0 }
+                    ticks: { stepSize: 1, precision: 0 },
+                    grid: { color: colors.grid }
+                },
+                x: {
+                    grid: { display: false }
                 }
             }
         }
@@ -389,14 +455,64 @@
 
 <style>
     .container-fluid { max-width: 1400px; }
-    .nav-pills .nav-link { color: #888; font-weight: 500; transition: all 0.2s; }
-    .nav-pills .nav-link:hover { color: white; background: rgba(255,255,255,0.1); }
-    .nav-pills .nav-link.active { background: white !important; color: black !important; }
+    .nav-pills .nav-link { color: var(--text-muted); font-weight: 500; transition: all 0.2s; }
+    .nav-pills .nav-link:hover { color: var(--text-primary); background: var(--bg-hover); }
+    .nav-pills .nav-link.active { background: var(--text-primary) !important; color: var(--bg-primary) !important; }
     
     .table-responsive::-webkit-scrollbar { width: 8px; height: 8px; }
     .table-responsive::-webkit-scrollbar-track { background: transparent; }
     .table-responsive::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 10px; }
     .table-responsive::-webkit-scrollbar-thumb:hover { background: #3a3a3a; }
+
+    @media print {
+        .nav, #downloadBtn, .navbar, .navbar-toggler { display: none !important; }
+        .container-fluid { padding: 0 !important; }
+        .card { border: 1px solid #eee !important; break-inside: avoid; }
+    }
 </style>
+
+<!-- html2canvas for screenshot functionality -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<script>
+    document.getElementById('downloadBtn').addEventListener('click', function() {
+        const btn = this;
+        const originalText = btn.innerHTML;
+        
+        // Show loading state
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Capturing...';
+
+        const element = document.getElementById('reportContent');
+        
+        // Use html2canvas to capture the element
+        html2canvas(element, {
+            backgroundColor: isDark ? '#0a0a0a' : '#f5f7fa',
+            scale: 2, // Higher quality
+            useCORS: true,
+            logging: false,
+            onclone: (clonedDoc) => {
+                // Ensure all tabs are visible or handled if needed
+                // For now, we capture the active view
+                clonedDoc.getElementById('downloadBtn').style.display = 'none';
+            }
+        }).then(canvas => {
+            // Create a download link
+            const link = document.createElement('a');
+            link.download = `Gym-Report-${new Date().toISOString().split('T')[0]}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            
+            // Restore button state
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }).catch(err => {
+            console.error('Download failed:', err);
+            alert('Failed to generate report. Please try again.');
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        });
+    });
+</script>
 {% endblock %}
 

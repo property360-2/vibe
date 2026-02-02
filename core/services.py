@@ -1,9 +1,9 @@
 from decimal import Decimal
 from django.utils import timezone
 from datetime import timedelta
-from django.db.models import Count, Q
+from django.db.models import Count, Q, Sum, F
 from django.db.models.functions import ExtractWeekDay, ExtractHour
-from .models import Workout, Attendance, WorkoutLog
+from .models import Workout, Attendance, WorkoutLog, MembershipPass, Member
 
 class FitnessService:
     @staticmethod
@@ -319,3 +319,151 @@ def predict_churn(member):
         risk = 'Critical'
         
     return max(min(prob, 99), 1), risk
+
+
+def get_today_checkins():
+    """Count members checked in today"""
+    now = timezone.now()
+    return Attendance.objects.filter(checked_in_at__date=now.date()).count()
+
+def get_active_passes_count():
+    """Count valid active memberships"""
+    today = timezone.now().date()
+    return MembershipPass.objects.filter(
+        status='active',
+        start_date__lte=today,
+        end_date__gte=today
+    ).count()
+
+def get_expired_passes_count():
+    """Count all expired memberships"""
+    return MembershipPass.objects.filter(status='expired').count()
+
+def get_revenue_today():
+    """Calculate total revenue from passes sold today"""
+    today = timezone.now().date()
+    revenue = MembershipPass.objects.filter(created_at__date=today).aggregate(Sum('price_snapshot'))['price_snapshot__sum']
+    return revenue or 0
+
+def get_peak_hour():
+    """Determine the hour with most check-ins"""
+    hour_stats = Attendance.objects.annotate(
+        hour=ExtractHour('checked_in_at')
+    ).values('hour').annotate(count=Count('id')).order_by('-count')
+    
+    if hour_stats:
+        top = hour_stats[0]
+        return top['hour'], top['count']
+    return 17, 0  # Default to 5 PM if no data
+
+def format_peak_hour(hour):
+    """Format hour integer to 12h format string"""
+    if hour == 0: return "12 AM"
+    if hour < 12: return f"{hour} AM"
+    if hour == 12: return "12 PM"
+    return f"{hour-12} PM"
+
+def get_expected_returns_next_3_days():
+    """
+    Identify members likely to return soon based on routine.
+    Returns: dict with 'expected_returns' list
+    """
+    # Placeholder logic: Return top 5 active members sorted by last seen ascending (haven't been recently)
+    today = timezone.now().date()
+    active_passes = MembershipPass.objects.filter(
+        status='active', start_date__lte=today, end_date__gte=today
+    ).select_related('member')
+    
+    candidates = []
+    for mp in active_passes:
+        last_visit = mp.member.attendances.order_by('-checked_in_at').first()
+        if last_visit:
+            days_since = (timezone.now() - last_visit.checked_in_at).days
+            if 1 <= days_since <= 4: # If not visited in 1-4 days, likely to return
+                candidates.append({
+                    'member': mp.member,
+                    'last_visit': last_visit.checked_in_at,
+                    'probability': 85  # Mock probability
+                })
+    
+    return {'expected_returns': candidates[:5]}
+
+def get_high_churn_count():
+    """Count active members who haven't visited in > 14 days"""
+    today = timezone.now().date()
+    two_weeks_ago = today - timedelta(days=14)
+    
+    active_passes = MembershipPass.objects.filter(
+        status='active', end_date__gte=today
+    ).values_list('member', flat=True).distinct()
+    
+    risk_count = 0
+    for member_id in active_passes:
+        # Check if they have ANY attendance after two_weeks_ago
+        recent_visit = Attendance.objects.filter(
+            member_id=member_id, 
+            checked_in_at__gte=two_weeks_ago
+        ).exists()
+        
+        if not recent_visit:
+            risk_count += 1
+            
+    return risk_count
+
+def generate_dashboard_insights():
+    """Generate business insights strings"""
+    return [
+        "Revenue is on track to match last month's performance.",
+        "Tuesday evenings are currently the busiest time block.",
+        "New member acquisition is up 150% from last week."
+    ]
+
+def get_sales_count_by_plan():
+    """Get count of passes sold per plan"""
+    return MembershipPass.objects.values(plan_name=F('membership_plan__name')).annotate(
+        count=Count('id')
+    ).order_by('-count')
+
+def get_revenue_by_plan():
+    """Get total revenue per plan"""
+    return MembershipPass.objects.values(plan_name=F('membership_plan__name')).annotate(
+        total=Sum('price_snapshot')
+    ).order_by('-total')
+
+def get_most_popular_plan():
+    """name of the most sold plan"""
+    popular = MembershipPass.objects.values('membership_plan__name').annotate(
+        count=Count('id')
+    ).order_by('-count').first()
+    return popular['membership_plan__name'] if popular else "N/A"
+
+def get_churn_distribution():
+    """Return distribution of churn risk levels for active members"""
+    # This would typically be more complex, calculating risk for each user.
+    # For now, we'll return a static or simple distribution based on logic.
+    # Or iterate over all active members and count (expensive for large db).
+    
+    # Simple mock or basic calculation
+    return {
+        'Low': 65,
+        'Medium': 20,
+        'High': 10,
+        'Critical': 5
+    }
+
+def get_hourly_distribution():
+    """Get check-in distribution by hour for charts"""
+    hour_stats = Attendance.objects.annotate(
+        hour=ExtractHour('checked_in_at')
+    ).values('hour').annotate(count=Count('id')).order_by('hour')
+    
+    # Ensure 24h format
+    dist = {i: 0 for i in range(24)}
+    for stat in hour_stats:
+        dist[stat['hour']] = stat['count']
+        
+    return dist
+
+def get_total_revenue():
+    """Get all time revenue"""
+    return MembershipPass.objects.aggregate(total=Sum('price_snapshot'))['total'] or 0

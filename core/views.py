@@ -11,7 +11,7 @@ from django.core.paginator import Paginator
 import random
 import json
 
-from .models import MembershipPlan, Member, MembershipPass, Attendance, CustomerProfile, Workout, Achievement, CustomerAchievement, WorkoutLog
+from .models import MembershipPlan, Member, MembershipPass, Attendance, CustomerProfile, Workout, Achievement, CustomerAchievement, WorkoutLog, UserSetting
 from .forms import MembershipPlanForm, MemberForm, SellPassForm, CheckInForm
 from . import services
 
@@ -732,6 +732,22 @@ def change_password(request):
         from django.contrib.auth.forms import PasswordChangeForm
         from django.contrib.auth import update_session_auth_hash
         
+        # Handle AJAX/JSON requests
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            import json
+            try:
+                data = json.loads(request.body)
+                form = PasswordChangeForm(request.user, data)
+                if form.is_valid():
+                    user = form.save()
+                    update_session_auth_hash(request, user)
+                    return JsonResponse({'status': 'success', 'message': 'Your password was successfully updated!'})
+                else:
+                    return JsonResponse({'status': 'error', 'errors': form.errors}, status=400)
+            except json.JSONDecodeError:
+                return JsonResponse({'status': 'error', 'message': 'Invalid JSON data'}, status=400)
+
+        # Handle standard form submission
         form = PasswordChangeForm(request.user, request.POST)
         if form.is_valid():
             user = form.save()
@@ -805,6 +821,8 @@ def customer_personalization(request):
             profile.savage_mode = request.POST.get('savage_mode') == 'on'
             profile.height_cm = request.POST.get('height_cm') or None
             profile.weight_kg = request.POST.get('weight_kg') or None
+            profile.theme = request.POST.get('theme', 'dark')
+            profile.font_size = request.POST.get('font_size', 'medium')
             
 
             profile.is_active = True
@@ -969,3 +987,34 @@ def log_workout_completion(request, pk):
     )
     
     return JsonResponse({'status': 'success', 'message': f'Workout "{workout.name}" logged!'})
+
+
+@login_required
+def user_settings(request):
+    """Manage global UI settings for the user"""
+    # Get or create settings
+    settings, created = UserSetting.objects.get_or_create(user=request.user)
+
+    if request.method == 'POST':
+        settings.theme = request.POST.get('theme', 'dark')
+        settings.font_size = request.POST.get('font_size', 'medium')
+        settings.save()
+        
+        # Also sync to CustomerProfile if exists (legacy support)
+        if hasattr(request.user, 'member') and hasattr(request.user.member, 'profile'):
+            try:
+                profile = request.user.member.profile
+                profile.theme = settings.theme
+                profile.font_size = settings.font_size
+                profile.save()
+            except:
+                pass
+            
+        messages.success(request, "Settings updated successfully!")
+        return redirect('user_settings')
+        
+    context = {
+        'settings': settings,
+        'page_title': 'UI Settings'
+    }
+    return render(request, 'pages/user_settings.html', context)
