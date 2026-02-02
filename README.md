@@ -15,7 +15,6 @@
 - [Tech Stack](#tech-stack)
 - [Installation](#installation)
 - [Usage](#usage)
-- [Screenshots](#screenshots)
 - [Contributing](#contributing)
 - [License](#license)
 - [Extra Notes](#extra-notes)
@@ -91,15 +90,6 @@ Once the server is running, access the application at `http://127.0.0.1:8000`.
 
 > [!TIP]
 > Use `python manage.py createsuperuser` to create an administrative account for full access.
-
----
-
-## Screenshots
-
-| Dashboard View | Management Panel |
-| :---: | :---: |
-| ![Dashboard Placeholder](https://via.placeholder.com/400x250?text=Student+Dashboard) | ![Management Placeholder](https://via.placeholder.com/400x250?text=Admin+Panel) |
-| *Clean, data-driven student dashboard* | *Powerful administrative tools* |
 
 ---
 
